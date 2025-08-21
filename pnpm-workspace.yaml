@@ -1,6 +1,6 @@
 # pnpm-workspace.yaml
 packages:
-  - contracts
+  - hardhat
   - api
-  - app
+  - client
   - prisma

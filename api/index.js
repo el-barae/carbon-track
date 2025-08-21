@@ -1,34 +1,29 @@
-const { ApolloServer, gql } = require("apollo-server");
-const { PrismaClient } = require("@prisma/client");
+import express from "express";
+import cors from "cors";
+import { PrismaClient } from "@prisma/client";
+
+const app = express();
 const prisma = new PrismaClient();
+app.use(cors());
+app.use(express.json());
 
-// Schéma GraphQL
-const typeDefs = gql`
-  type CreditBatch {
-    batchId: String!
-    projectId: String!
-    vintage: Int!
-    standard: String!
-    region: String!
-    totalIssued: String!
-    totalRetired: String!
-    createdAt: String!
-  }
+// Endpoint: crédits carbone
+app.get("/credits", async (req, res) => {
+  const credits = await prisma.credit.findMany();
+  res.json(credits);
+});
 
-  type Query {
-    credits: [CreditBatch!]!
-  }
-`;
+// Endpoint: empreinte carbone
+app.post("/footprint", async (req, res) => {
+  const { wallet, value } = req.body;
+  const user = await prisma.user.upsert({
+    where: { wallet },
+    update: { footprint: { increment: value } },
+    create: { wallet, footprint: value },
+  });
+  res.json(user);
+});
 
-// Résolveurs
-const resolvers = {
-  Query: {
-    credits: () => prisma.creditBatch.findMany(),
-  },
-};
-
-const server = new ApolloServer({ typeDefs, resolvers });
-
-server.listen().then(({ url }) => {
-  console.log(`🚀 API ready at ${url}`);
+app.listen(4000, () => {
+  console.log("API running on http://localhost:4000");
 });
