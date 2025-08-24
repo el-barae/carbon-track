@@ -4,7 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev:api": "cd api && pnpm dev",
+    "dev:client": "cd client && pnpm dev",
+    "dev:hardhat": "cd hardhat && npx hardhat node",
+    "dev": "concurrently \"pnpm dev:api\" \"pnpm dev:client\"",
+    "deploy": "cd hardhat && npx hardhat run scripts/deploy.js --network localhost"
   },
   "keywords": [],
   "author": "",
