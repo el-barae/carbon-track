@@ -1,63 +1,44 @@
-import { Credit } from "../types"
-import { CarbonFootprintData } from "../types"
-import { User } from "../types"
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4000"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
-
-export async function fetchCredits(): Promise<Credit[]> {
-  const response = await fetch(`${API_BASE_URL}/credits`)
-  if (!response.ok) {
-    throw new Error('Failed to fetch credits')
-  }
-  return response.json()
+export async function fetchCredits() {
+  const res = await fetch(`${API_BASE}/credits`)
+  return res.json()
 }
 
-export async function calculateFootprint(data: {
-  wallet: string
-  energyConsumption: number
-  travel: { car?: number; plane?: number }
-}): Promise<CarbonFootprintData> {
-  const response = await fetch(`${API_BASE_URL}/footprint/calculate`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+export async function createCredit(data: any) {
+  const res = await fetch(`${API_BASE}/credits`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   })
-  
-  if (!response.ok) {
-    throw new Error('Failed to calculate footprint')
-  }
-  
-  return response.json()
+  return res.json()
 }
 
-export async function fetchUser(wallet: string): Promise<User> {
-  const response = await fetch(`${API_BASE_URL}/user/${wallet}`)
-  if (!response.ok) {
-    throw new Error('Failed to fetch user')
-  }
-  return response.json()
+export async function fetchTransactions() {
+  const res = await fetch(`${API_BASE}/transactions`)
+  return res.json()
 }
 
-export async function createCredit(creditData: {
-  projectId: string
-  vintage: string
-  certifier: string
-  amount: number
-  owner: string
-}): Promise<Credit> {
-  const response = await fetch(`${API_BASE_URL}/credits`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(creditData),
+export async function fetchTransactionsByWallet(wallet: string) {
+  const res = await fetch(`${API_BASE}/transactions/${wallet}`)
+  return res.json()
+}
+
+export async function fetchUsers() {
+  const res = await fetch(`${API_BASE}/users`)
+  return res.json()
+}
+
+export async function fetchUserByWallet(wallet: string) {
+  const res = await fetch(`${API_BASE}/users/${wallet}`)
+  return res.json()
+}
+
+export async function calculateFootprint(data: any) {
+  const res = await fetch(`${API_BASE}/users/footprint/calculate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
   })
-  
-  if (!response.ok) {
-    throw new Error('Failed to create credit')
-  }
-  
-  return response.json()
+  return res.json()
 }

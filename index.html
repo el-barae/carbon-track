@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CarbonTrack - Carbon Credit DApp</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.1/ethers.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            padding: 40px 0;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .wallet-section {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .wallet-status {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .connect-btn, .action-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .connect-btn:hover, .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+
+        .card h3 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .footprint-result {
+            background: linear-gradient(45deg, #2ecc71, #27ae60);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .footprint-result h4 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .credits-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .credit-item {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .credit-item h5 {
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .credit-item p {
+            font-size: 0.9rem;
+            color: #666;
+            margin: 3px 0;
+        }
+
+        .marketplace {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .marketplace h3 {
+            color: white;
+        }
+
+        .market-item {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            backdrop-filter: blur(5px);
+        }
+
+        .market-item h5 {
+            margin-bottom: 10px;
+        }
+
+        .market-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .buy-btn, .retire-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .buy-btn:hover, .retire-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .status-connected {
+            color: #27ae60;
+            font-weight: bold;
+        }
+
+        .status-disconnected {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .loading {
+            text-align: center;
+            color: #667eea;
+            font-style: italic;
+        }
+
+        .admin-section {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+            color: #333;
+        }
+
+        .admin-section h3 {
+            color: #333;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .wallet-status {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌱 CarbonTrack</h1>
+            <p>Transparent Carbon Credit Tokenization on Blockchain</p>
+        </div>
+
+        <div class="wallet-section">
+            <div class="wallet-status">
+                <div>
+                    <span id="wallet-status" class="status-disconnected">Wallet: Not Connected</span>
+                    <div id="wallet-address" style="font-size: 0.9rem; color: #666; margin-top: 5px;"></div>
+                </div>
+                <button id="connect-wallet" class="connect-btn">Connect Wallet</button>
+            </div>
+        </div>
+
+        <div class="dashboard">
+            <!-- Carbon Footprint Calculator -->
+            <div class="card">
+                <h3>🌍 Carbon Footprint Calculator</h3>
+                <div class="form-group">
+                    <label for="energy-consumption">Energy Consumption (kWh/month)</label>
+                    <input type="number" id="energy-consumption" placeholder="e.g., 500" min="0">
+                </div>
+                
+                <div class="form-group">
+                    <label for="car-travel">Car Travel (km/month)</label>
+                    <input type="number" id="car-travel" placeholder="e.g., 1000" min="0">
+                </div>
+                
+                <div class="form-group">
+                    <label for="plane-travel">Plane Travel (km/year)</label>
+                    <input type="number" id="plane-travel" placeholder="e.g., 5000" min="0">
+                </div>
+                
+                <button class="action-btn" onclick="calculateFootprint()">Calculate Footprint</button>
+                
+                <div id="footprint-result"></div>
+            </div>
+
+            <!-- User Credits Portfolio -->
+            <div class="card">
+                <h3>💰 Your Carbon Credits</h3>
+                <div id="user-credits" class="credits-list">
+                    <div class="loading">Connect wallet to view your credits</div>
+                </div>
+                <button class="action-btn" onclick="refreshUserCredits()" style="margin-top: 15px;">Refresh Portfolio</button>
+            </div>
+
+            <!-- Marketplace -->
+            <div class="card marketplace">
+                <h3>🏪 Carbon Credit Marketplace</h3>
+                <div id="marketplace-credits" class="credits-list">
+                    <div class="loading">Loading marketplace...</div>
+                </div>
+                <button class="action-btn" onclick="loadMarketplace()" style="margin-top: 15px;">Refresh Marketplace</button>
+            </div>
+
+            <!-- Admin Panel (for DAO members) -->
+            <div class="card admin-section">
+                <h3>⚙️ Admin Panel</h3>
+                <div class="form-group">
+                    <label for="mint-address">Recipient Address</label>
+                    <input type="text" id="mint-address" placeholder="0x...">
+                </div>
+                
+                <div class="form-group">
+                    <label for="mint-amount">Amount (tokens)</label>
+                    <input type="number" id="mint-amount" placeholder="e.g., 100" min="0" step="0.1">
+                </div>
+                
+                <div class="form-group">
+                    <label for="project-id">Project ID</label>
+                    <input type="text" id="project-id" placeholder="e.g., PROJ-001">
+                </div>
+                
+                <div class="form-group">
+                    <label for="vintage">Vintage Year</label>
+                    <input type="number" id="vintage" placeholder="e.g., 2024" min="2020" max="2030">
+                </div>
+                
+                <div class="form-group">
+                    <label for="certifier">Certifier</label>
+                    <select id="certifier">
+                        <option value="">Select Certifier</option>
+                        <option value="Gold Standard">Gold Standard</option>
+                        <option value="Verra">Verra</option>
+                        <option value="Climate Action Reserve">Climate Action Reserve</option>
+                    </select>
+                </div>
+                
+                <button class="action-btn" onclick="mintCredits()">Mint Carbon Credits</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:4000';
+        let userAccount = null;
+        let provider = null;
+        let signer = null;
+        let contract = null;
+
+        // Contract ABI (simplified for demo)
+        const CONTRACT_ABI = [
+            "function balanceOf(address owner) view returns (uint256)",
+            "function mintCredits(address to, uint256 amount, string projectId, string vintage, string certifier)",
+            "function retireCredits(uint256 amount, string reason)",
+            "function creditInfo(address owner) view returns (tuple(string projectId, string vintage, string certifier, bool verified))",
+            "event CreditsMinted(address indexed to, uint256 amount, string projectId)",
+            "event CreditsRetired(address indexed from, uint256 amount, string reason)"
+        ];
+
+        // Replace with your deployed contract address
+        const CONTRACT_ADDRESS = "0x2f78D8062c79669F912307EA9F9066b24FF6B545"; // You'll need to deploy and update this
+
+        // Connect Wallet Function
+        document.getElementById('connect-wallet').addEventListener('click', async () => {
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    provider = new ethers.BrowserProvider(window.ethereum);
+                    signer = await provider.getSigner();
+                    userAccount = await signer.getAddress();
+                    
+                    // Initialize contract
+                    contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+                    
+                    updateWalletStatus();
+                    refreshUserCredits();
+                    
+                } catch (error) {
+                    console.error('Failed to connect wallet:', error);
+                    alert('Failed to connect wallet');
+                }
+            } else {
+                alert('MetaMask is not installed!');
+            }
+        });
+
+        function updateWalletStatus() {
+            const statusEl = document.getElementById('wallet-status');
+            const addressEl = document.getElementById('wallet-address');
+            const connectBtn = document.getElementById('connect-wallet');
+            
+            if (userAccount) {
+                statusEl.textContent = 'Wallet: Connected';
+                statusEl.className = 'status-connected';
+                addressEl.textContent = `${userAccount.slice(0, 6)}...${userAccount.slice(-4)}`;
+                connectBtn.textContent = 'Disconnect';
+                connectBtn.onclick = () => {
+                    userAccount = null;
+                    provider = null;
+                    signer = null;
+                    contract = null;
+                    updateWalletStatus();
+                    document.getElementById('user-credits').innerHTML = '<div class="loading">Connect wallet to view your credits</div>';
+                };
+            } else {
+                statusEl.textContent = 'Wallet: Not Connected';
+                statusEl.className = 'status-disconnected';
+                addressEl.textContent = '';
+                connectBtn.textContent = 'Connect Wallet';
+            }
+        }
+
+        // Calculate Carbon Footprint
+        async function calculateFootprint() {
+            const energy = parseFloat(document.getElementById('energy-consumption').value) || 0;
+            const car = parseFloat(document.getElementById('car-travel').value) || 0;
+            const plane = parseFloat(document.getElementById('plane-travel').value) || 0;
+            
+            if (energy === 0 && car === 0 && plane === 0) {
+                alert('Please enter at least one value');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/footprint/calculate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        wallet: userAccount || 'anonymous',
+                        energyConsumption: energy,
+                        travel: {
+                            car: car,
+                            plane: plane
+                        }
+                    })
+                });
+
+                const data = await response.json();
+                
+                const resultEl = document.getElementById('footprint-result');
+                resultEl.innerHTML = `
+                    <div class="footprint-result">
+                        <h4>Your Carbon Footprint</h4>
+                        <p><strong>${data.footprint.toFixed(2)} tonnes CO2/year</strong></p>
+                        <p>${data.recommendation}</p>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error calculating footprint:', error);
+                alert('Error calculating footprint');
+            }
+        }
+
+        // Load User Credits
+        async function refreshUserCredits() {
+            if (!userAccount) {
+                document.getElementById('user-credits').innerHTML = '<div class="loading">Connect wallet to view your credits</div>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/user/${userAccount}`);
+                if (response.ok) {
+                    const userData = await response.json();
+                    displayUserCredits(userData.credits || []);
+                } else {
+                    document.getElementById('user-credits').innerHTML = '<div class="loading">No credits found</div>';
+                }
+            } catch (error) {
+                console.error('Error loading user credits:', error);
+                document.getElementById('user-credits').innerHTML = '<div class="loading">Error loading credits</div>';
+            }
+        }
+
+        function displayUserCredits(credits) {
+            const container = document.getElementById('user-credits');
+            
+            if (credits.length === 0) {
+                container.innerHTML = '<div class="loading">No carbon credits in your portfolio</div>';
+                return;
+            }
+
+            container.innerHTML = credits.map(credit => `
+                <div class="credit-item">
+                    <h5>Project: ${credit.projectId}</h5>
+                    <p><strong>Amount:</strong> ${credit.amount} CO2 tokens</p>
+                    <p><strong>Vintage:</strong> ${credit.vintage}</p>
+                    <p><strong>Certifier:</strong> ${credit.certifier}</p>
+                    <button class="retire-btn" onclick="retireCredit(${credit.amount}, '${credit.projectId}')">
+                        Retire Credits
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // Load Marketplace
+        async function loadMarketplace() {
+            try {
+                const response = await fetch(`${API_BASE}/credits`);
+                const credits = await response.json();
+                displayMarketplace(credits);
+            } catch (error) {
+                console.error('Error loading marketplace:', error);
+                document.getElementById('marketplace-credits').innerHTML = '<div class="loading">Error loading marketplace</div>';
+            }
+        }
+
+        function displayMarketplace(credits) {
+            const container = document.getElementById('marketplace-credits');
+            
+            if (credits.length === 0) {
+                container.innerHTML = '<div class="loading">No credits available in marketplace</div>';
+                return;
+            }
+
+            container.innerHTML = credits.map(credit => `
+                <div class="market-item">
+                    <h5>Project: ${credit.projectId}</h5>
+                    <p><strong>Amount:</strong> ${credit.amount} CO2 tokens</p>
+                    <p><strong>Vintage:</strong> ${credit.vintage}</p>
+                    <p><strong>Certifier:</strong> ${credit.certifier}</p>
+                    <p><strong>Owner:</strong> ${credit.owner.slice(0, 6)}...${credit.owner.slice(-4)}</p>
+                    <div class="market-actions">
+                        <button class="buy-btn" onclick="buyCredit('${credit.projectId}', ${credit.amount})">
+                            Buy Credits
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Mint Credits (Admin function)
+        async function mintCredits() {
+            if (!userAccount || !contract) {
+                alert('Please connect your wallet first');
+                return;
+            }
+
+            const address = document.getElementById('mint-address').value;
+            const amount = document.getElementById('mint-amount').value;
+            const projectId = document.getElementById('project-id').value;
+            const vintage = document.getElementById('vintage').value;
+            const certifier = document.getElementById('certifier').value;
+
+            if (!address || !amount || !projectId || !vintage || !certifier) {
+                alert('Please fill all fields');
+                return;
+            }
+
+            try {
+                // Convert amount to token units (assuming 18 decimals)
+                const amountInWei = ethers.parseEther(amount.toString());
+                
+                const tx = await contract.mintCredits(
+                    address,
+                    amountInWei,
+                    projectId,
+                    vintage,
+                    certifier
+                );
+                
+                alert('Transaction submitted! Hash: ' + tx.hash);
+                
+                // Wait for confirmation
+                await tx.wait();
+                
+                // Also create entry in API
+                await fetch(`${API_BASE}/credits`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        projectId,
+                        vintage,
+                        certifier,
+                        amount: parseFloat(amount),
+                        owner: address
+                    })
+                });
+                
+                alert('Credits minted successfully!');
+                loadMarketplace();
+                
+            } catch (error) {
+                console.error('Error minting credits:', error);
+                alert('Error minting credits: ' + error.message);
+            }
+        }
+
+        // Retire Credits
+        async function retireCredit(amount, projectId) {
+            if (!userAccount || !contract) {
+                alert('Please connect your wallet first');
+                return;
+            }
+
+            try {
+                const reason = prompt(`Retire ${amount} credits from ${projectId}?\nEnter reason:`);
+                if (!reason) return;
+
+                const amountInWei = ethers.parseEther(amount.toString());
+                const tx = await contract.retireCredits(amountInWei, reason);
+                
+                alert('Retirement transaction submitted! Hash: ' + tx.hash);
+                await tx.wait();
+                alert('Credits retired successfully!');
+                
+                refreshUserCredits();
+                
+            } catch (error) {
+                console.error('Error retiring credits:', error);
+                alert('Error retiring credits: ' + error.message);
+            }
+        }
+
+        // Buy Credits (simplified - in real implementation would involve marketplace contract)
+        async function buyCredit(projectId, amount) {
+            alert(`Buying ${amount} credits from ${projectId}\nThis would involve a marketplace transaction in the full implementation.`);
+        }
+
+        // Initialize app
+        window.addEventListener('load', () => {
+            loadMarketplace();
+            updateWalletStatus();
+        });
+
+        // Handle account changes
+        if (typeof window.ethereum !== 'undefined') {
+            window.ethereum.on('accountsChanged', (accounts) => {
+                if (accounts.length === 0) {
+                    userAccount = null;
+                    updateWalletStatus();
+                } else {
+                    userAccount = accounts[0];
+                    updateWalletStatus();
+                    refreshUserCredits();
+                }
+            });
+        }
+    </script>
+</body>
+</html>
