@@ -1,32 +1,68 @@
+// routes/transactions.js
 const express = require('express');
 const router = express.Router();
-const transactionService = require('../services/transactionService');
+const { contract } = require('../utils/contract');
 
-router.post('/', async (req, res) => {
-  try {
-    const { creditId, seller, buyer, amount } = req.body;
-    const transaction = await transactionService.createTransaction({ creditId, seller, buyer, amount });
-    res.status(201).json(transaction);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
+// --- In-memory cache ---
+let transactionsCache = null;
+let lastFetchTime = 0;
+const CACHE_TTL = 60 * 1000; // 1 minute (change as needed)
+
+// Helper: fetch events from blockchain or cache
+async function getTransactionsFromChain() {
+  const now = Date.now();
+
+  // If cache is still valid, return it
+  if (transactionsCache && (now - lastFetchTime < CACHE_TTL)) {
+    console.log("✅ Returning transactions from cache");
+    return transactionsCache;
   }
-});
 
+  console.log("♻️ Fetching fresh transactions from Infura");
+  const filter = contract.filters.Transfer();
+  const DEPLOY_BLOCK = Number(process.env.DEPLOY_BLOCK || 0);
+
+  const events = await contract.queryFilter(filter, DEPLOY_BLOCK, "latest");
+
+  transactionsCache = events.map(e => ({
+    from: e.args.from,
+    to: e.args.to,
+    value: e.args.value.toString(),
+    txHash: e.transactionHash,
+    blockNumber: e.blockNumber,
+  }));
+
+  lastFetchTime = now;
+  return transactionsCache;
+}
+
+// GET /transactions
 router.get('/', async (req, res) => {
   try {
-    const transactions = await transactionService.getAllTransactions();
-    res.json(transactions);
-  } catch (error) {
-    res.status(500).json({ error: "Erreur serveur" });
+    const rows = await getTransactionsFromChain();
+    res.json(rows);
+  } catch (err) {
+    console.error("❌ Error in /transactions:", err);
+    res.status(500).json({ error: err.message });
   }
 });
 
-router.get('/:wallet', async (req, res) => {
+// GET /transactions/:address
+router.get('/:address', async (req, res) => {
   try {
-    const transactions = await transactionService.getTransactionsByWallet(req.params.wallet);
-    res.json(transactions);
-  } catch (error) {
-    res.status(500).json({ error: "Erreur serveur" });
+    const { address } = req.params;
+    console.log("Fetching transactions for:", address);
+
+    const allTransfers = await getTransactionsFromChain();
+
+    const formatted = allTransfers.filter(
+      e => e.from.toLowerCase() === address.toLowerCase() || e.to.toLowerCase() === address.toLowerCase()
+    );
+
+    res.json(formatted);
+  } catch (err) {
+    console.error("❌ Error in /transactions/:address:", err);
+    res.status(500).json({ error: err.message });
   }
 });
 
