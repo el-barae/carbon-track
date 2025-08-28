@@ -2,8 +2,25 @@
 
 import { useEffect, useState } from "react"
 import { useAccount, useReadContract, useWriteContract } from "wagmi"
-import { contractConfig } from "./lib/contract"
-import * as api from "./lib/api"
+import { contractConfig } from "../lib/contract"
+import {
+  fetchCredits,
+  fetchListings,
+  fetchTransactions,
+  fetchTransactionsByAddress,
+  createListing as apiCreateListing,
+  buyListing as apiBuyListing,
+  cancelListing as apiCancelListing,
+  adminMintCredits,
+  adminVerifyCredit,
+  formatTokenAmount,
+  validateAddress,
+  validateAmount,
+  handleAPIError,
+  type Credit,
+  type Listing,
+  type Transaction,
+} from "../lib/api"
 import Navbar from "./components/Navbar"
 import WalletSection from "./components/WalletSection"
 import CreateListingSection from "./components/CreateListingSection"
@@ -13,9 +30,7 @@ import TransactionsSection from "./components/TransactionsSection"
 import AdminSection from "./components/AdminSection"
 
 const fmt = (n?: number | string | bigint, d = 6) => {
-  if (n === undefined) return "0"
-  const v = typeof n === "bigint" ? Number(n) : Number(n)
-  return (v / 10 ** d).toLocaleString(undefined, { maximumFractionDigits: d })
+  return formatTokenAmount(n?.toString() || "0", d)
 }
 
 export default function Page() {
@@ -40,13 +55,13 @@ export default function Page() {
 
   const { writeContract, isPending } = useWriteContract()
 
-  // On-Chain Data States (from backend)
-  const [credits, setCredits] = useState<any[]>([])
-  const [listings, setListings] = useState<any[]>([])
-  const [transactions, setTransactions] = useState<any[]>([])
-  const [userCredits, setUserCredits] = useState<any[]>([])
-  const [userTransactions, setUserTransactions] = useState<any[]>([])
+  const [credits, setCredits] = useState<Credit[]>([])
+  const [listings, setListings] = useState<Listing[]>([])
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [userCredits, setUserCredits] = useState<Credit[]>([])
+  const [userTransactions, setUserTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const d = decimals ?? 6
 
@@ -56,116 +71,236 @@ export default function Page() {
   }, [])
 
   useEffect(() => {
-    if (address) {
+    if (address && validateAddress(address)) {
       loadUserData(address)
     }
   }, [address, credits])
 
   const loadAllData = async () => {
     setLoading(true)
+    setError(null)
     try {
+      console.log("[v0] Loading all data from enhanced API service")
       const [creditsData, listingsData, transactionsData] = await Promise.all([
-        api.fetchCredits(),
-        api.fetchListings(),
-        api.fetchTransactions(),
+        fetchCredits(),
+        fetchListings(),
+        fetchTransactions(),
       ])
+
+      console.log("[v0] Successfully loaded data:", {
+        credits: creditsData.length,
+        listings: listingsData.length,
+        transactions: transactionsData.length,
+      })
+
       setCredits(creditsData)
       setListings(listingsData)
       setTransactions(transactionsData)
     } catch (error) {
-      console.error("Failed to load data:", error)
+      console.error("[v0] Failed to load data:", error)
+      setError("Failed to load blockchain data. Please try again.")
     }
     setLoading(false)
   }
 
   const loadUserData = async (userAddress: string) => {
+    if (!validateAddress(userAddress)) {
+      console.error("[v0] Invalid address provided:", userAddress)
+      return
+    }
+
     try {
-      const [userTransactionsData] = await Promise.all([api.fetchTransactionsByAddress(userAddress)])
+      console.log("[v0] Loading user data for address:", userAddress)
+      const [userTransactionsData] = await Promise.all([fetchTransactionsByAddress(userAddress)])
 
       // Filter credits minted to this user
       const userCreditsData = credits.filter((credit) => credit.to.toLowerCase() === userAddress.toLowerCase())
 
+      console.log("[v0] User data loaded:", {
+        userCredits: userCreditsData.length,
+        userTransactions: userTransactionsData.length,
+      })
+
       setUserCredits(userCreditsData)
       setUserTransactions(userTransactionsData)
     } catch (error) {
-      console.error("Failed to load user data:", error)
+      console.error("[v0] Failed to load user data:", error)
       setUserCredits([])
       setUserTransactions([])
     }
   }
 
-  // Smart Contract Functions
   const createListing = async (amount: string, price: string) => {
-    if (!amount || !price) return
+    if (!validateAmount(amount) || !validateAmount(price)) {
+      console.error("[v0] Invalid amount or price provided")
+      return
+    }
+
     try {
+      console.log("[v0] Creating listing:", { amount, price })
+
+      const listingData = {
+        amount: (Number(amount) * 10 ** d).toString(),
+        pricePerToken: (Number(price) * 1e18).toString(),
+      }
+
+      await apiCreateListing(listingData)
+
+      // Also create on-chain listing
       const tokenAmount = BigInt(Math.floor(Number(amount) * 10 ** d))
       const pricePerTokenWei = BigInt(Math.floor(Number(price) * 1e18))
+
       await writeContract({
         ...contractConfig,
         functionName: "createListing",
         args: [tokenAmount, pricePerTokenWei],
       })
+
       // Refresh data after transaction
-      setTimeout(loadAllData, 2000)
+      setTimeout(() => {
+        console.log("[v0] Refreshing data after listing creation")
+        loadAllData()
+      }, 2000)
     } catch (error) {
-      console.error("Failed to create listing:", error)
+      console.error("[v0] Failed to create listing:", handleAPIError(error))
     }
   }
 
-  const buyListing = async (listing: any) => {
+  const buyListing = async (listing: Listing) => {
     try {
+      console.log("[v0] Buying listing:", listing.id)
+
+      await apiBuyListing(listing.id)
+
+      // Also execute on-chain transaction
       const total = BigInt(listing.amount) * BigInt(listing.pricePerToken)
+
       await writeContract({
         ...contractConfig,
         functionName: "buyListing",
         args: [listing.id],
         value: total,
       })
+
       // Refresh data after transaction
-      setTimeout(loadAllData, 2000)
+      setTimeout(() => {
+        console.log("[v0] Refreshing data after listing purchase")
+        loadAllData()
+      }, 2000)
     } catch (error) {
-      console.error("Failed to buy listing:", error)
+      console.error("[v0] Failed to buy listing:", handleAPIError(error))
     }
   }
 
   const cancelListing = async (id: number) => {
     try {
+      console.log("[v0] Cancelling listing:", id)
+
+      await apiCancelListing(id)
+
+      // Also cancel on-chain listing
       await writeContract({
         ...contractConfig,
         functionName: "cancelListing",
         args: [BigInt(id)],
       })
+
       // Refresh data after transaction
-      setTimeout(loadAllData, 2000)
+      setTimeout(() => {
+        console.log("[v0] Refreshing data after listing cancellation")
+        loadAllData()
+      }, 2000)
     } catch (error) {
-      console.error("Failed to cancel listing:", error)
+      console.error("[v0] Failed to cancel listing:", handleAPIError(error))
     }
   }
 
   const retireCredits = async (amount: string, reason: string) => {
-    if (!amount || !reason) return
+    if (!validateAmount(amount) || !reason.trim()) {
+      console.error("[v0] Invalid amount or reason provided")
+      return
+    }
+
     try {
+      console.log("[v0] Retiring credits:", { amount, reason })
       const tokenAmount = BigInt(Math.floor(Number(amount) * 10 ** d))
+
       await writeContract({
         ...contractConfig,
         functionName: "retireCredits",
         args: [tokenAmount, reason],
       })
+
       // Refresh data after transaction
       setTimeout(() => {
+        console.log("[v0] Refreshing data after credit retirement")
         loadAllData()
         if (address) loadUserData(address)
       }, 2000)
     } catch (error) {
-      console.error("Failed to retire credits:", error)
+      console.error("[v0] Failed to retire credits:", error)
     }
   }
+
+  // Admin functions for minting and verification
+  const mintCredits = async (to: string, amount: string, projectId: string) => {
+    if (!validateAddress(to) || !validateAmount(amount)) {
+      console.error("[v0] Invalid recipient or amount provided")
+      return
+    }
+
+    try {
+      console.log("[v0] Admin minting credits:", { to, amount, projectId })
+
+      const result = await adminMintCredits({
+        to,
+        amount,
+        projectId,
+        certifier: "Admin",
+        vintage: new Date().getFullYear().toString(),
+      })
+
+      console.log("[v0] Credits minted successfully:", result)
+
+      // Refresh data after minting
+      setTimeout(() => {
+        console.log("[v0] Refreshing data after credit minting")
+        loadAllData()
+      }, 1000)
+    } catch (error) {
+      console.error("[v0] Failed to mint credits:", handleAPIError(error))
+    }
+  }
+
+  // const verifyCredit = async (creditId: string, status: "verified" | "rejected", notes?: string) => {
+  //   try {
+  //     console.log("[v0] Admin verifying credit:", { creditId, status, notes })
+
+  //     const result = await adminVerifyCredit({
+  //       creditId,
+  //       status,
+  //       notes,
+  //     })
+
+  //     console.log("[v0] Credit verification completed:", result)
+
+  //     // Refresh data after verification
+  //     setTimeout(() => {
+  //       console.log("[v0] Refreshing data after credit verification")
+  //       loadAllData()
+  //     }, 1000)
+  //   } catch (error) {
+  //     console.error("[v0] Failed to verify credit:", handleAPIError(error))
+  //   }
+  // }
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar address={address} />
 
       <main className="max-w-6xl mx-auto p-4 space-y-6">
+        {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">{error}</div>}
+
         <WalletSection address={address} balance={balance} decimals={d} fmt={fmt} />
 
         <div id="create-listing">
@@ -200,7 +335,12 @@ export default function Page() {
         </div>
 
         <div id="admin">
-          <AdminSection onDataRefresh={loadAllData} />
+          <AdminSection
+            onDataRefresh={loadAllData}
+            onMintCredits={mintCredits}
+            // onVerifyCredit={verifyCredit}
+            isPending={isPending}
+          />
         </div>
       </main>
     </div>

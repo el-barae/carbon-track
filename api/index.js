@@ -4,12 +4,7 @@ const app = express();
 require('dotenv').config({ path: '../.env' });
 
 app.use(cors({
-  origin: [
-    'http://localhost:3000',  // Next.js default dev port
-    'http://localhost:3001',  // Alternative dev port
-    'http://127.0.0.1:3000',
-    'http://127.0.0.1:3001'
-  ],
+  origin: '*',
   credentials: true
 }));
 

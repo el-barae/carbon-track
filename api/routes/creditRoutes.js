@@ -9,7 +9,7 @@ router.get('/', async (req, res) => {
   try {
     const filter = contract.filters.CreditsMinted();
     // fetch all events; for mainnet may want pagination or fromBlock
-    const DEPLOY_BLOCK = Number(process.env.DEPLOY_BLOCK || 0);
+    const DEPLOY_BLOCK = Number(process.env.DEPLOY_BLOCK || 9082751);
 const events = await contract.queryFilter(filter, DEPLOY_BLOCK, 'latest');
 
     const rows = events.map(e => ({

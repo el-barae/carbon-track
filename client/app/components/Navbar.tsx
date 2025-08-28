@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "./ui/button"
 import { Menu, X, Leaf, Wallet, TrendingUp, FileText, Settings, Plus } from "lucide-react"
 
@@ -11,13 +11,10 @@ interface NavbarProps {
 
 export default function Navbar({ address, onConnectWallet }: NavbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [mounted, setMounted] = useState(false)
 
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  const formatAddress = (addr: string) => `${addr.slice(0, 6)}...${addr.slice(-4)}`
+  const formatAddress = (addr: string) => {
+    return `${addr.slice(0, 6)}...${addr.slice(-4)}`
+  }
 
   const navItems = [
     { name: "Create Listing", icon: Plus, href: "#create-listing" },
@@ -66,7 +63,7 @@ export default function Navbar({ address, onConnectWallet }: NavbarProps) {
 
           {/* Wallet Connection */}
           <div className="flex items-center gap-4">
-            {mounted && address ? (
+            {address ? (
               <div className="flex items-center gap-3">
                 <div className="hidden sm:flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>

@@ -2,7 +2,70 @@
 const express = require('express');
 const router = express.Router();
 const { contract } = require('../utils/contract');
-const { ethers } = require('ethers');
+const { contractWithSigner } = require("../utils/contract")
+
+// POST /listings - Create new listing
+router.post('/', async (req, res) => {
+  try {
+    if (!contractWithSigner) {
+      return res.status(500).json({ error: 'Admin signer not configured' });
+    }
+
+    const { amount, pricePerToken } = req.body;
+    if (!amount || !pricePerToken) {
+      return res.status(400).json({ error: 'Missing amount or pricePerToken' });
+    }
+
+    // Ici PAS de parseUnits, car déjà fait dans le front
+    const tx = await contractWithSigner.createListing(amount, pricePerToken);
+    const receipt = await tx.wait();
+
+    res.json({
+      message: "✅ Listing created",
+      txHash: receipt.transactionHash,
+      blockNumber: receipt.blockNumber,
+    });
+  } catch (err) {
+    console.error("❌ Error in /listings:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+// POST /listings/:id/buy
+// body: {}
+router.post('/:id/buy', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const listing = await contract.listings(id);
+    if (!listing.active) return res.status(400).json({ error: 'Listing not active' });
+
+    const totalPrice = listing.amount * listing.pricePerToken;
+
+    const tx = await contractWithSigner.buyListing(id, { value: totalPrice });
+    const receipt = await tx.wait();
+
+    res.json({ txHash: receipt.transactionHash, blockNumber: receipt.blockNumber });
+  } catch (err) {
+    console.error("❌ Error in /listings/:id/buy:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /listings/:id/cancel
+router.post('/:id/cancel', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+
+    const tx = await contractWithSigner.cancelListing(id);
+    const receipt = await tx.wait();
+
+    res.json({ txHash: receipt.transactionHash, blockNumber: receipt.blockNumber });
+  } catch (err) {
+    console.error("❌ Error in /listings/:id/cancel:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // GET /listings
 // returns all active listings by scanning [0..nextListingId)
