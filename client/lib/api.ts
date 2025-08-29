@@ -1,5 +1,16 @@
 // lib/api.ts - Enhanced API service using fetch for comprehensive on-chain data backend
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4000"
+import { ethers } from "ethers";
+import CO2KEN from "../abi/CO2ken.json";
+
+const CONTRACT_ADDRESS = "0x8bD854B05ed0Ba4289a9efAdA418488697fF2aaa";
+
+export interface ListingDataResponse {
+  id: number;
+  amount: string;
+  pricePerToken: string;
+  totalPrice: string;
+}
 
 // Types for on-chain data
 export interface CreditMintEvent {
@@ -139,11 +150,29 @@ export async function createListing(data: CreateListingRequest): Promise<Listing
 }
 
 // POST /listings/:id/buy - Purchase a listing
-export async function buyListing(listingId: number): Promise<ListingTransactionResponse> {
-  return apiRequest<ListingTransactionResponse>(`/listings/${listingId}/buy`, {
-    method: "POST",
-    data: {}, // Empty body as required by backend
-  })
+export async function buyListing(listingId: number) {
+  // 1. Fetch data from backend
+  const listing = await apiRequest<ListingDataResponse>(`/listings/${listingId}/data`);
+
+  // 2. Setup Metamask provider
+  if (!window.ethereum) throw new Error("Metamask not found");
+  const provider = new ethers.BrowserProvider(window.ethereum);
+  await provider.send("eth_requestAccounts", []);
+  const signer = await provider.getSigner();
+
+  // 3. Créer le contrat avec le signer Metamask
+  const contract = new ethers.Contract(CONTRACT_ADDRESS, CO2KEN.abi, signer);
+
+  // 4. Envoyer la transaction
+  const tx = await contract.buyListing(listing.id, {
+    value: listing.totalPrice,
+  });
+  const receipt = await tx.wait();
+
+  return {
+    txHash: receipt.hash,
+    blockNumber: receipt.blockNumber,
+  };
 }
 
 // POST /listings/:id/cancel - Cancel a listing

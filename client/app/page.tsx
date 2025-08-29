@@ -272,28 +272,24 @@ export default function Page() {
     }
   }
 
-  // const verifyCredit = async (creditId: string, status: "verified" | "rejected", notes?: string) => {
-  //   try {
-  //     console.log("[v0] Admin verifying credit:", { creditId, status, notes })
-
-  //     const result = await adminVerifyCredit({
-  //       creditId,
-  //       status,
-  //       notes,
-  //     })
-
-  //     console.log("[v0] Credit verification completed:", result)
-
-  //     // Refresh data after verification
-  //     setTimeout(() => {
-  //       console.log("[v0] Refreshing data after credit verification")
-  //       loadAllData()
-  //     }, 1000)
-  //   } catch (error) {
-  //     console.error("[v0] Failed to verify credit:", handleAPIError(error))
-  //   }
-  // }
-
+  const verifyCredit = async (holder: string, verified: boolean, notes?: string) => {
+    try {
+      console.log("[v0] Admin verifying credit:", { holder, verified, notes })
+      const result = await adminVerifyCredit({
+        holder,
+        verified,
+      })
+      console.log("[v0] Credit verification completed:", result)
+      // Refresh data after verification
+      setTimeout(() => {
+        console.log("[v0] Refreshing data after credit verification")
+        loadAllData()
+      }, 1000)
+    } catch (error) {
+      console.error("[v0] Failed to verify credit:", handleAPIError(error))
+    }
+  }
+  
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar address={address} />
@@ -338,7 +334,7 @@ export default function Page() {
           <AdminSection
             onDataRefresh={loadAllData}
             onMintCredits={mintCredits}
-            // onVerifyCredit={verifyCredit}
+            onVerifyCredit={verifyCredit}
             isPending={isPending}
           />
         </div>

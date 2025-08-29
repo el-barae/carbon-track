@@ -8,13 +8,11 @@ import { RefreshCw, Shield, Database, UserPlus, CheckCircle, XCircle, Coins } fr
 interface AdminSectionProps {
   onDataRefresh: () => Promise<void>
   onMintCredits: (recipient: string, amount: string, projectId: string) => Promise<void>
-  // onVerifyCredit: (creditId: string, status: "verified" | "rejected", notes?: string) => Promise<void>
+  onVerifyCredit: (holder: string, status: boolean, notes?: string) => Promise<void>
   isPending: boolean
 }
 
-export default function AdminSection({ onDataRefresh, onMintCredits, 
-  // onVerifyCredit,
-   isPending }: AdminSectionProps) {
+export default function AdminSection({ onDataRefresh, onMintCredits, onVerifyCredit, isPending }: AdminSectionProps) {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [showMintForm, setShowMintForm] = useState(false)
   const [showVerifyForm, setShowVerifyForm] = useState(false)
@@ -25,7 +23,7 @@ export default function AdminSection({ onDataRefresh, onMintCredits,
   const [mintProjectId, setMintProjectId] = useState("")
 
   // Verify form state
-  const [verifyCreditId, setVerifyCreditId] = useState("")
+  const [verifyHolder, setVerifyHolder] = useState("")
   const [verifyNotes, setVerifyNotes] = useState("")
 
   const handleRefresh = async () => {
@@ -55,12 +53,12 @@ export default function AdminSection({ onDataRefresh, onMintCredits,
   }
 
   const handleVerifyCredit = async (status: "verified" | "rejected") => {
-    if (!verifyCreditId) return
+    if (!verifyHolder) return
 
     try {
-      // await onVerifyCredit(verifyCreditId, status, verifyNotes)
+      await onVerifyCredit(verifyHolder, status === "verified", verifyNotes)
       // Clear form on success
-      setVerifyCreditId("")
+      setVerifyHolder("")
       setVerifyNotes("")
       setShowVerifyForm(false)
     } catch (error) {
@@ -132,7 +130,7 @@ export default function AdminSection({ onDataRefresh, onMintCredits,
                     type="text"
                     placeholder="0x..."
                     value={mintRecipient}
-                    onChange={(e:any) => setMintRecipient(e.target.value)}
+                    onChange={(e) => setMintRecipient(e.target.value)}
                     className="border-green-300 focus:ring-green-500"
                   />
                 </div>
@@ -143,7 +141,7 @@ export default function AdminSection({ onDataRefresh, onMintCredits,
                     step="0.000001"
                     placeholder="100.000000"
                     value={mintAmount}
-                    onChange={(e:any) => setMintAmount(e.target.value)}
+                    onChange={(e) => setMintAmount(e.target.value)}
                     className="border-green-300 focus:ring-green-500"
                   />
                 </div>
@@ -153,7 +151,7 @@ export default function AdminSection({ onDataRefresh, onMintCredits,
                     type="text"
                     placeholder="PROJ-001"
                     value={mintProjectId}
-                    onChange={(e:any) => setMintProjectId(e.target.value)}
+                    onChange={(e) => setMintProjectId(e.target.value)}
                     className="border-green-300 focus:ring-green-500"
                   />
                 </div>
@@ -195,12 +193,12 @@ export default function AdminSection({ onDataRefresh, onMintCredits,
             <div className="mt-4 space-y-3">
               <div className="grid md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-blue-700 mb-1">Credit ID</label>
+                  <label className="block text-sm font-medium text-blue-700 mb-1">Holder Address</label>
                   <Input
                     type="text"
-                    placeholder="credit_123456"
-                    value={verifyCreditId}
-                    onChange={(e:any) => setVerifyCreditId(e.target.value)}
+                    placeholder="0x..."
+                    value={verifyHolder}
+                    onChange={(e) => setVerifyHolder(e.target.value)}
                     className="border-blue-300 focus:ring-blue-500"
                   />
                 </div>
@@ -210,7 +208,7 @@ export default function AdminSection({ onDataRefresh, onMintCredits,
                     type="text"
                     placeholder="Optional verification notes..."
                     value={verifyNotes}
-                    onChange={(e:any) => setVerifyNotes(e.target.value)}
+                    onChange={(e) => setVerifyNotes(e.target.value)}
                     className="border-blue-300 focus:ring-blue-500"
                   />
                 </div>
@@ -218,7 +216,7 @@ export default function AdminSection({ onDataRefresh, onMintCredits,
               <div className="flex gap-2">
                 <Button
                   onClick={() => handleVerifyCredit("verified")}
-                  disabled={isPending || !verifyCreditId}
+                  disabled={isPending || !verifyHolder}
                   className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
                 >
                   <CheckCircle className="w-4 h-4" />
@@ -226,7 +224,7 @@ export default function AdminSection({ onDataRefresh, onMintCredits,
                 </Button>
                 <Button
                   onClick={() => handleVerifyCredit("rejected")}
-                  disabled={isPending || !verifyCreditId}
+                  disabled={isPending || !verifyHolder}
                   variant="destructive"
                   className="flex items-center gap-2"
                 >
