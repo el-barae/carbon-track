@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Button } from "./ui/button"
 import { ShoppingCart, X, TrendingUp } from "lucide-react"
 
 interface MarketplaceSectionProps {
@@ -164,25 +163,24 @@ export default function MarketplaceSection({
 
                     <div className="flex items-center gap-2">
                       {isOwnListing ? (
-                        <Button
-                          variant="destructive"
-                          size="sm"
+                        <button
                           onClick={() => onCancel(listing.id)}
-                          className="flex items-center gap-2"
+                          className="flex items-center gap-2 rounded-md bg-red-600 hover:bg-red-700 px-3 py-2 text-sm font-medium text-white transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50"
                         >
                           <X className="w-4 h-4" />
                           Cancel
-                        </Button>
+                        </button>
                       ) : (
-                        <Button
+                        <button
                           onClick={() => onBuy(listing)}
                           disabled={!address}
-                          className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
+                          className="flex items-center gap-2 rounded-md bg-green-600 hover:bg-green-700 px-3 py-2 text-sm font-medium text-white transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50"
                         >
                           <ShoppingCart className="w-4 h-4" />
                           Buy Now
-                        </Button>
+                        </button>
                       )}
+
                     </div>
                   </div>
                 </div>

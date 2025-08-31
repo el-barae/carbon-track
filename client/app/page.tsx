@@ -280,21 +280,28 @@ export default function Page() {
       console.error("[v0] Failed to verify credit:", handleAPIError(error))
     }
   }
+
+  const [activeSection, setActiveSection] = useState("portfolio")
   
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar address={address} />
+  const handleSectionChange = (section: string) => {
+    setActiveSection(section)
+  }
 
-      <main className="max-w-6xl mx-auto p-4 space-y-6">
-        {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">{error}</div>}
-
-        <WalletSection address={address} balance={balance} decimals={d} fmt={fmt} />
-
-        <div id="create-listing">
-          <CreateListingSection onCreateListing={createListing} isPending={isPending} />
-        </div>
-
-        <div id="marketplace">
+  const renderActiveSection = () => {
+    switch (activeSection) {
+      case "portfolio":
+        return (
+          <CreditsSection
+            userCredits={userCredits}
+            address={address}
+            onRetireCredits={retireCredits}
+            isPending={isPending}
+            fmt={fmt}
+            decimals={d}
+          />
+        )
+      case "marketplace":
+        return (
           <MarketplaceSection
             listings={listings}
             address={address}
@@ -304,9 +311,22 @@ export default function Page() {
             decimals={d}
             loading={loading}
           />
-        </div>
-
-        <div id="credits">
+        )
+      case "create-listing":
+        return <CreateListingSection onCreateListing={createListing} isPending={isPending} />
+      case "transactions":
+        return <TransactionsSection transactions={userTransactions} />
+      case "admin":
+        return (
+          <AdminSection
+            onDataRefresh={loadAllData}
+            onMintCredits={mintCredits}
+            onVerifyCredit={verifyCredit}
+            isPending={isPending}
+          />
+        )
+      default:
+        return (
           <CreditsSection
             userCredits={userCredits}
             address={address}
@@ -315,20 +335,20 @@ export default function Page() {
             fmt={fmt}
             decimals={d}
           />
-        </div>
+        )
+    }
+  }
 
-        <div id="transactions">
-          <TransactionsSection transactions={transactions} />
-        </div>
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Navbar address={address} activeSection={activeSection} onSectionChange={handleSectionChange} />
 
-        <div id="admin">
-          <AdminSection
-            onDataRefresh={loadAllData}
-            onMintCredits={mintCredits}
-            onVerifyCredit={verifyCredit}
-            isPending={isPending}
-          />
-        </div>
+      <main className="max-w-6xl mx-auto p-4 space-y-6">
+        {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">{error}</div>}
+
+        <WalletSection address={address} balance={balance} decimals={d} fmt={fmt} />
+
+        {renderActiveSection()}
       </main>
     </div>
   )

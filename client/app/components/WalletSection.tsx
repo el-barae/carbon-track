@@ -1,6 +1,5 @@
 "use client"
 
-import { Button } from "./ui/button"
 import { Wallet, Copy, ExternalLink } from "lucide-react"
 import { useState, useEffect } from "react"
 
@@ -62,18 +61,22 @@ export default function WalletSection({ address, balance, decimals, fmt }: Walle
           <label className="block text-sm font-medium text-gray-600 mb-2">Wallet Address</label>
           <div className="flex items-center gap-2 p-3 bg-white border border-gray-200 rounded-lg">
             <span className="font-mono text-sm text-gray-800 flex-1">{formatAddress(address)}</span>
-            <Button variant="ghost" size="sm" onClick={copyAddress} className="h-8 w-8 p-0">
+
+            <button
+              onClick={copyAddress}
+              className="h-8 w-8 p-0 flex items-center justify-center rounded-lg text-gray-600 hover:bg-gray-100 transition"
+            >
               <Copy className="w-3 h-3" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0"
+            </button>
+
+            <button
               onClick={() => window.open(`https://etherscan.io/address/${address}`, "_blank")}
+              className="h-8 w-8 p-0 flex items-center justify-center rounded-lg text-gray-600 hover:bg-gray-100 transition"
             >
               <ExternalLink className="w-3 h-3" />
-            </Button>
+            </button>
           </div>
+
           {copied && <p className="text-xs text-green-600 mt-1">Address copied to clipboard!</p>}
         </div>
 
