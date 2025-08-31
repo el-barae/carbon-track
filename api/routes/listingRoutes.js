@@ -33,62 +33,6 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.get('/:id/data', async (req, res) => {
-  try {
-    const id = Number(req.params.id);
-    const listing = await contract.listings(id);
-
-    if (!listing.active) {
-      return res.status(400).json({ error: 'Listing not active' });
-    }
-
-    const decimals = 10n ** 6n;
-    const totalPrice = (BigInt(listing.amount) * BigInt(listing.pricePerToken)) / decimals;
-
-    res.json({
-      id,
-      amount: listing.amount.toString(),
-      pricePerToken: listing.pricePerToken.toString(),
-      totalPrice: totalPrice.toString(),
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-
-
-// POST /listings/:id/buy
-// body: {}
-router.post('/:id/buy', async (req, res) => {
-  try {
-    const id = Number(req.params.id);
-    const listing = await contract.listings(id);
-
-    if (!listing.active) {
-      return res.status(400).json({ error: 'Listing not active' });
-    }
-
-    // corriger le calcul avec BigNumber
-    const decimals = ethers.BigNumber.from(10).pow(6); // ton token = 6 décimales
-    const totalPrice = ethers.BigNumber.from(listing.amount)
-      .mul(listing.pricePerToken)
-      .div(decimals);
-
-    const tx = await contractWithSigner.buyListing(id, { value: totalPrice });
-    const receipt = await tx.wait();
-
-    res.json({
-      txHash: receipt.transactionHash,
-      blockNumber: receipt.blockNumber
-    });
-  } catch (err) {
-    console.error("❌ Error in /listings/:id/buy:", err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-
 // POST /listings/:id/cancel
 router.post('/:id/cancel', async (req, res) => {
   try {

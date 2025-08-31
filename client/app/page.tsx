@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useAccount, useReadContract, useWriteContract } from "wagmi"
+import { useTokenBalance } from "../lib/useTokenBalance"
 import { contractConfig } from "../lib/contract"
 import {
   fetchCredits,
@@ -37,16 +38,16 @@ export default function Page() {
   const { address } = useAccount()
 
   // Smart Contract States
-  const { data: balance } = useReadContract({
+    const { data: balance, isLoading: balanceLoading } = useReadContract({
     ...contractConfig,
     functionName: "balanceOf",
     args: address ? [address] : undefined,
-  }) as { data?: bigint }
+  }) as { data?: bigint, isLoading: boolean }
 
-  const { data: decimals } = useReadContract({
+  const { data: decimals, isLoading: decimalsLoading } = useReadContract({
     ...contractConfig,
     functionName: "decimals",
-  }) as { data?: number }
+  }) as { data?: number, isLoading: boolean }
 
   const { data: nextListingId } = useReadContract({
     ...contractConfig,
@@ -170,17 +171,7 @@ export default function Page() {
     try {
       console.log("[v0] Buying listing:", listing.id)
 
-      await apiBuyListing(listing.id)
-
-      // Also execute on-chain transaction
-      const total = BigInt(listing.amount) * BigInt(listing.pricePerToken)
-
-      await writeContract({
-        ...contractConfig,
-        functionName: "buyListing",
-        args: [listing.id],
-        value: total,
-      })
+      await apiBuyListing(listing)
 
       // Refresh data after transaction
       setTimeout(() => {

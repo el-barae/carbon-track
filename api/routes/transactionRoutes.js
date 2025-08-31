@@ -1,7 +1,7 @@
 // routes/transactions.js
 const express = require('express');
 const router = express.Router();
-const { contract } = require('../utils/contract');
+const { contract, provider, address } = require('../utils/contract');
 
 // --- In-memory cache ---
 let transactionsCache = null;
@@ -20,7 +20,7 @@ async function getTransactionsFromChain() {
 
   console.log("♻️ Fetching fresh transactions from Infura");
   const filter = contract.filters.Transfer();
-  const DEPLOY_BLOCK = Number(process.env.DEPLOY_BLOCK || 0);
+  const DEPLOY_BLOCK = await provider.getTransactionReceipt(address);
 
   const events = await contract.queryFilter(filter, DEPLOY_BLOCK, "latest");
 

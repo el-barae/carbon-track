@@ -3,7 +3,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4000"
 import { ethers } from "ethers";
 import CO2KEN from "../abi/CO2ken.json";
 
-const CONTRACT_ADDRESS = "0x8bD854B05ed0Ba4289a9efAdA418488697fF2aaa";
+const CONTRACT_ADDRESS = "0x3bbD5034C9cCEA4647B0cc250809715447f0531c";
 
 export interface ListingDataResponse {
   id: number;
@@ -149,24 +149,22 @@ export async function createListing(data: CreateListingRequest): Promise<Listing
   })
 }
 
-// POST /listings/:id/buy - Purchase a listing
-export async function buyListing(listingId: number) {
-  // 1. Fetch data from backend
-  const listing = await apiRequest<ListingDataResponse>(`/listings/${listingId}/data`);
+// Purchase a listing
+export async function buyListing(listing: Listing) {
 
-  // 2. Setup Metamask provider
   if (!window.ethereum) throw new Error("Metamask not found");
-  const provider = new ethers.BrowserProvider(window.ethereum);
-  await provider.send("eth_requestAccounts", []);
-  const signer = await provider.getSigner();
+  const provider = new ethers.BrowserProvider(window.ethereum, "any"); 
+    await provider.send("eth_requestAccounts", []);
+    const signer = await provider.getSigner();
 
-  // 3. Créer le contrat avec le signer Metamask
-  const contract = new ethers.Contract(CONTRACT_ADDRESS, CO2KEN.abi, signer);
+    const contract = new ethers.Contract(CONTRACT_ADDRESS, CO2KEN.abi, signer);
 
-  // 4. Envoyer la transaction
-  const tx = await contract.buyListing(listing.id, {
-    value: listing.totalPrice,
+    const expectedTotal = BigInt(listing.amount) * BigInt(listing.pricePerToken);
+
+    const tx = await contract.buyListing(listing.id, {
+    value: ethers.toBigInt(expectedTotal),
   });
+
   const receipt = await tx.wait();
 
   return {
@@ -174,6 +172,7 @@ export async function buyListing(listingId: number) {
     blockNumber: receipt.blockNumber,
   };
 }
+
 
 // POST /listings/:id/cancel - Cancel a listing
 export async function cancelListing(listingId: number): Promise<ListingTransactionResponse> {

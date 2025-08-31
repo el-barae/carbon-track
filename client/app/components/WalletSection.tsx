@@ -5,13 +5,15 @@ import { Wallet, Copy, ExternalLink } from "lucide-react"
 import { useState, useEffect } from "react"
 
 interface WalletSectionProps {
-  address: string | undefined
-  balance: bigint | undefined
-  decimals: number
+  address?: string
+  balance?: bigint
+  decimals?: number  
   fmt: (n?: number | string | bigint, d?: number) => string
 }
 
+
 export default function WalletSection({ address, balance, decimals, fmt }: WalletSectionProps) {
+  const isLoading = balance === undefined || decimals === undefined
   const [copied, setCopied] = useState(false)
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
@@ -80,7 +82,7 @@ export default function WalletSection({ address, balance, decimals, fmt }: Walle
           <label className="block text-sm font-medium text-gray-600 mb-2">SCO2 Token Balance</label>
           <div className="p-3 bg-white border border-gray-200 rounded-lg">
             <div className="text-2xl font-bold text-green-700">
-              {balance !== undefined ? fmt(balance, decimals) : "Loading..."}{" "}
+                {isLoading ? "Loading..." : fmt(balance, decimals)}{" "}
               <span className="text-sm font-medium text-gray-500">SCO2</span>
             </div>
             <div className="text-xs text-gray-500 mt-1">Carbon Credit Tokens</div>

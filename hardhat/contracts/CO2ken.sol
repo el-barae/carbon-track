@@ -32,6 +32,9 @@ contract CO2ken is ERC20, Ownable {
     event ListingCreated(uint256 indexed id, address indexed seller, uint256 amount, uint256 pricePerToken);
     event ListingPurchased(uint256 indexed id, address indexed buyer, uint256 amount, uint256 totalPrice);
     event ListingCancelled(uint256 indexed id);
+    event DebugUint(string label, uint256 value);
+    event DebugAddr(string label, address value);
+
 
     constructor() ERC20("Carbon Credit", "SCO2") Ownable(msg.sender) {}
 
@@ -95,23 +98,33 @@ contract CO2ken is ERC20, Ownable {
 
     function buyListing(uint256 listingId) external payable {
         Listing storage lst = listings[listingId];
+
+        emit DebugUint("listingId", listingId);
+        emit DebugAddr("buyer", msg.sender);
+        emit DebugAddr("seller", lst.seller);
+        emit DebugUint("amount", lst.amount);
+        emit DebugUint("pricePerToken", lst.pricePerToken);
+        emit DebugUint("msg.value", msg.value);
+        emit DebugUint("expectedTotal", lst.amount * lst.pricePerToken);
+
         require(lst.active, "Listing not active");
 
         uint256 totalPrice = lst.amount * lst.pricePerToken;
         require(msg.value == totalPrice, "Incorrect ETH amount sent");
 
-        // Mark sold before external calls
+        // Marquer vendu avant les appels externes
         lst.active = false;
 
-        // Transfer tokens to buyer
+        // Transférer les tokens à l’acheteur
         _transfer(address(this), msg.sender, lst.amount);
 
-        // Send ETH to seller
+        // Envoyer l’ETH au vendeur
         (bool ok, ) = lst.seller.call{value: msg.value}("");
         require(ok, "Payment to seller failed");
 
         emit ListingPurchased(listingId, msg.sender, lst.amount, totalPrice);
     }
+
 
     function cancelListing(uint256 listingId) external {
         Listing storage lst = listings[listingId];
