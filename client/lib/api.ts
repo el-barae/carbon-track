@@ -2,8 +2,7 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4000"
 import { ethers } from "ethers";
 import CO2KEN from "../abi/CO2ken.json";
-
-const CONTRACT_ADDRESS = "0x3bbD5034C9cCEA4647B0cc250809715447f0531c";
+import { CONTRACT_ADDRESS } from "./contract";
 
 export interface ListingDataResponse {
   id: number;
@@ -72,6 +71,16 @@ export interface ListingTransactionResponse {
   blockNumber: number
 }
 
+export interface CarbonFootprintRequest {
+  energy: string; 
+}
+
+export interface CarbonFootprintResponse {
+  energy: string;
+  footprint: string;
+  unit: string;
+}
+
 // API Error class
 class APIError extends Error {
   constructor(
@@ -132,21 +141,12 @@ export async function fetchCredits(): Promise<CreditMintEvent[]> {
 // Retire Credits
 export async function retireCredits(amount: bigint, reason: string) {
   if (!window.ethereum) throw new Error("Metamask not found");
-
-  // 1. Provider depuis Metamask
   const provider = new ethers.BrowserProvider(window.ethereum, "any");
   await provider.send("eth_requestAccounts", []);
-
-  // 2. Récupérer le signer
   const signer = await provider.getSigner();
-
-  // 3. Créer une instance du contrat
   const contract = new ethers.Contract(CONTRACT_ADDRESS, CO2KEN.abi, signer);
-
-  // 4. Appeler la fonction avec amount + reason
   const tx = await contract.retireCredits(amount, reason);
 
-  // 5. Attendre la confirmation
   const receipt = await tx.wait();
 
   return {
@@ -237,6 +237,24 @@ export async function adminVerifyCredit(data: AdminVerifyRequest): Promise<Admin
     data,
   })
 }
+
+// GET /footprint
+export async function getCarbonFootprint(
+  energy: string,
+  carKm: string = "0",
+  flightKm: string = "0"
+): Promise<CarbonFootprintResponse> {
+  const params = new URLSearchParams({
+    energy,
+    carKm,
+    flightKm,
+  });
+
+  return apiRequest<CarbonFootprintResponse>(`/footprint?${params.toString()}`, {
+    method: "GET",
+  });
+}
+
 
 // ---- Utility functions ----
 

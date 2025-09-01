@@ -14,12 +14,11 @@ contract CO2ken is ERC20, Ownable {
 
     mapping(address => CreditInfo) public creditInfo;
 
-    // Marketplace
     struct Listing {
         uint256 id;
         address seller;
         uint256 amount;
-        uint256 pricePerToken; // in wei per token unit (token decimals = 6)
+        uint256 pricePerToken;
         bool active;
     }
 
@@ -32,9 +31,6 @@ contract CO2ken is ERC20, Ownable {
     event ListingCreated(uint256 indexed id, address indexed seller, uint256 amount, uint256 pricePerToken);
     event ListingPurchased(uint256 indexed id, address indexed buyer, uint256 amount, uint256 totalPrice);
     event ListingCancelled(uint256 indexed id);
-    event DebugUint(string label, uint256 value);
-    event DebugAddr(string label, address value);
-
 
     constructor() ERC20("Carbon Credit", "SCO2") Ownable(msg.sender) {}
 
@@ -43,9 +39,6 @@ contract CO2ken is ERC20, Ownable {
         return 6;
     }
 
-    // ----------------
-    // Mint / Burn / Verify
-    // ----------------
     function mintCredits(
         address to,
         uint256 amount,
@@ -57,7 +50,6 @@ contract CO2ken is ERC20, Ownable {
         require(amount > 0, "Amount must be > 0");
 
         _mint(to, amount);
-        // Store simple metadata per holder (minimal design)
         creditInfo[to] = CreditInfo(projectId, vintage, certifier, false);
         emit CreditsMinted(to, amount, projectId, vintage, certifier);
     }
@@ -73,15 +65,11 @@ contract CO2ken is ERC20, Ownable {
         emit CreditVerified(holder, isVerified);
     }
 
-    // ----------------
-    // Marketplace: create / buy / cancel
-    // ----------------
     function createListing(uint256 amount, uint256 pricePerToken) external {
         require(balanceOf(msg.sender) >= amount, "Not enough credits");
         require(amount > 0, "Amount must be > 0");
         require(pricePerToken > 0, "Price must be > 0");
 
-        // Escrow tokens in contract
         _transfer(msg.sender, address(this), amount);
 
         listings[nextListingId] = Listing({
@@ -99,32 +87,20 @@ contract CO2ken is ERC20, Ownable {
     function buyListing(uint256 listingId) external payable {
         Listing storage lst = listings[listingId];
 
-        emit DebugUint("listingId", listingId);
-        emit DebugAddr("buyer", msg.sender);
-        emit DebugAddr("seller", lst.seller);
-        emit DebugUint("amount", lst.amount);
-        emit DebugUint("pricePerToken", lst.pricePerToken);
-        emit DebugUint("msg.value", msg.value);
-        emit DebugUint("expectedTotal", lst.amount * lst.pricePerToken);
-
         require(lst.active, "Listing not active");
 
         uint256 totalPrice = lst.amount * lst.pricePerToken;
         require(msg.value == totalPrice, "Incorrect ETH amount sent");
 
-        // Marquer vendu avant les appels externes
         lst.active = false;
 
-        // Transférer les tokens à l’acheteur
         _transfer(address(this), msg.sender, lst.amount);
 
-        // Envoyer l’ETH au vendeur
         (bool ok, ) = lst.seller.call{value: msg.value}("");
         require(ok, "Payment to seller failed");
 
         emit ListingPurchased(listingId, msg.sender, lst.amount, totalPrice);
     }
-
 
     function cancelListing(uint256 listingId) external {
         Listing storage lst = listings[listingId];
@@ -133,13 +109,11 @@ contract CO2ken is ERC20, Ownable {
 
         lst.active = false;
 
-        // Return tokens to seller
         _transfer(address(this), lst.seller, lst.amount);
 
         emit ListingCancelled(listingId);
     }
 
-    // Owner can withdraw accidental ETH
     function rescueETH(address payable to, uint256 amount) external onlyOwner {
         (bool ok, ) = to.call{value: amount}("");
         require(ok, "Rescue failed");
@@ -161,7 +135,6 @@ contract CO2ken is ERC20, Ownable {
         ) 
     {
         if (end <= start || end > nextListingId) {
-            // retourner des tableaux vides correctement
             uint256[] memory emptyIds;
             address[] memory emptySellers;
             uint256[] memory emptyAmounts;
@@ -187,4 +160,14 @@ contract CO2ken is ERC20, Ownable {
             actives[idx] = l.active;
         }
     }
+
+    // Carbon Footprint Calculator
+    function calculateCarbonFootprint(uint256 energy, uint256 carKm, uint256 flightKm) public pure returns (uint256) {
+        // 0.233 kgCO2 per kWh -> 233 gCO2
+        uint256 energyFootprint = energy * 233; 
+        uint256 carFootprint = carKm * 120;    
+        uint256 flightFootprint = flightKm * 250;
+        return energyFootprint + carFootprint + flightFootprint;
+    }
+
 }

@@ -1,4 +1,3 @@
-// routes/credits.js
 const express = require('express');
 const router = express.Router();
 const { contract, provider, address } = require('../utils/contract');
@@ -8,7 +7,6 @@ const { contract, provider, address } = require('../utils/contract');
 router.get('/', async (req, res) => {
   try {
     const filter = contract.filters.CreditsMinted();
-    // fetch all events; for mainnet may want pagination or fromBlock
     const DEPLOY_BLOCK = await provider.getTransactionReceipt(address);
     const events = await contract.queryFilter(filter, DEPLOY_BLOCK, 'latest');
 

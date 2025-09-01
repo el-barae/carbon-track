@@ -54,29 +54,32 @@ export default function Page() {
   const [error, setError] = useState<string | null>(null)
 
   // 🔹 Fetch balance, decimals, nextListingId directly from contract
-  useEffect(() => {
-    const loadOnChainData = async () => {
-      try {
-        if (!window.ethereum || !address) return
-        const provider = new ethers.BrowserProvider(window.ethereum)
+ useEffect(() => {
+  const loadOnChainData = async () => {
+    try {
+      if (!window.ethereum || !address) return
+      const provider = new ethers.BrowserProvider(window.ethereum)
+      await provider.send("eth_requestAccounts", [])
+      const signer = await provider.getSigner()
 
-        const contract = new ethers.Contract(contractConfig.address, CO2KEN.abi, provider)
+      const contract = new ethers.Contract(contractConfig.address, CO2KEN.abi, signer)
 
-        const [rawBalance, rawDecimals, rawNextListingId] = await Promise.all([
-          contract.balanceOf(address),
-          contract.decimals(),
-          contract.nextListingId(),
-        ])
+      const [rawBalance, rawDecimals, rawNextListingId] = await Promise.all([
+        contract.balanceOf(address),
+        contract.decimals(),
+        contract.nextListingId(),
+      ])
 
-        setBalance(rawBalance)
-        // setDecimals(Number(rawDecimals))
-        setNextListingId(rawNextListingId)
-      } catch (err) {
-        console.error("[v0] Failed to load contract data:", err)
-      }
+      setBalance(rawBalance)
+      setDecimals(Number(rawDecimals))
+      setNextListingId(rawNextListingId)
+    } catch (err) {
+      console.error("[v0] Failed to load contract data:", err)
     }
-    loadOnChainData()
-  }, [address])
+  }
+  loadOnChainData()
+}, [address])
+
 
   const d = decimals ?? 6
 

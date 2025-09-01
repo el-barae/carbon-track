@@ -1,4 +1,3 @@
-// routes/transactions.js
 const express = require('express');
 const router = express.Router();
 const { contract, provider, address } = require('../utils/contract');

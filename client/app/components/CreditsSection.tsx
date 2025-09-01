@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { getCarbonFootprint } from "../../lib/api"
 
 interface CreditsSectionProps {
   userCredits: any[]
@@ -23,13 +24,19 @@ export default function CreditsSection({
   const [retireReason, setRetireReason] = useState("")
   const [showRetireForm, setShowRetireForm] = useState(false)
 
-  // Use effect to only calculate totalCredits on the client-side after initial render
   const [totalCredits, setTotalCredits] = useState(0)
   const [mounted, setMounted] = useState(false)
 
-useEffect(() => {
-  setMounted(true)
-}, [])
+  // footprint states
+  const [energy, setEnergy] = useState("")
+  const [footprint, setFootprint] = useState<string | null>(null)
+  const [carKm,setCarKm] = useState('')
+  const [flightKm,setFlightKm] = useState('')
+  const [loadingFootprint, setLoadingFootprint] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     const sumCredits = userCredits.reduce((sum, credit) => sum + Number(credit.amount), 0)
@@ -48,6 +55,21 @@ useEffect(() => {
     }
   }
 
+  const handleCalculateFootprint = async () => {
+    if (!energy && !carKm && !flightKm) return
+    try {
+      setLoadingFootprint(true)
+      const res = await getCarbonFootprint(energy, carKm, flightKm)
+      setFootprint(`${res.footprint} ${res.unit}`)
+    } catch (err) {
+      console.error("Footprint calculation failed:", err)
+      setFootprint("Error calculating footprint")
+    } finally {
+      setLoadingFootprint(false)
+    }
+  }
+
+
   if (!mounted) {
     return (
       <section className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
@@ -58,6 +80,7 @@ useEffect(() => {
 
   return (
     <section className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+      {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">My Carbon Credits Portfolio</h2>
         <div className="flex items-center gap-2">
@@ -74,25 +97,18 @@ useEffect(() => {
 
       {!address ? (
         <div className="text-center py-12">
-        <div className="text-6xl mb-4">
-          {!address ? "🔗" : !userCredits.length ? "📜" : "✅"}
+          <div className="text-6xl mb-4">{!address ? "🔗" : !userCredits.length ? "📜" : "✅"}</div>
+          <div className="text-gray-500 font-medium mb-2">
+            {!address ? "Connect Your Wallet" : !userCredits.length ? "No carbon credits found" : ""}
+          </div>
+          <div className="text-sm text-gray-400">
+            {!address
+              ? "Connect your wallet to view your carbon credits portfolio"
+              : !userCredits.length
+              ? "You haven't been minted any carbon credits yet"
+              : ""}
+          </div>
         </div>
-        <div className="text-gray-500 font-medium mb-2">
-          {!address
-            ? "Connect Your Wallet"
-            : !userCredits.length
-            ? "No carbon credits found"
-            : ""}
-        </div>
-        <div className="text-sm text-gray-400">
-          {!address
-            ? "Connect your wallet to view your carbon credits portfolio"
-            : !userCredits.length
-            ? "You haven't been minted any carbon credits yet"
-            : ""}
-        </div>
-      </div>
-
       ) : (
         <div className="space-y-6">
           {/* Portfolio Summary */}
@@ -118,6 +134,42 @@ useEffect(() => {
                 </button>
               </div>
             </div>
+          </div>
+
+          {/* ⚡️ Carbon Footprint Calculator */}
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+          <h3 className="font-semibold text-blue-800 mb-3">Carbon Footprint Calculator</h3>
+          <div className="flex flex-col md:flex-row gap-3 mb-3">
+            <input
+              type="number"
+              placeholder="Energy consumed (kWh)"
+              className="flex-1 border border-blue-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              value={energy}
+              onChange={(e) => setEnergy(e.target.value)}
+            />
+            <input
+              type="number"
+              placeholder="Car travel (km)"
+              className="flex-1 border border-blue-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              value={carKm}
+              onChange={(e) => setCarKm(e.target.value)}
+            />
+            <input
+              type="number"
+              placeholder="Flight travel (km)"
+              className="flex-1 border border-blue-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              value={flightKm}
+              onChange={(e) => setFlightKm(e.target.value)}
+            />
+            <button
+              onClick={handleCalculateFootprint}
+              disabled={loadingFootprint || (!energy && !carKm && !flightKm)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-all duration-200 disabled:opacity-50"
+            >
+              {loadingFootprint ? "Calculating..." : "Calculate"}
+            </button>
+          </div>
+          {footprint && ( <div className="text-sm font-medium text-gray-700"> Estimated Footprint:{" "} <span className="text-lg font-bold text-blue-700">{footprint}</span> </div> )}
           </div>
 
           {/* Retire Form */}
@@ -172,7 +224,10 @@ useEffect(() => {
           <div className="space-y-3">
             <h3 className="font-semibold text-gray-800 mb-3">Your Carbon Credits</h3>
             {userCredits.map((credit: any, index: number) => (
-              <div key={index} className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
+              <div
+                key={index}
+                className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow"
+              >
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                   <div className="space-y-2">
                     <div className="font-semibold text-gray-800 flex items-center gap-2">

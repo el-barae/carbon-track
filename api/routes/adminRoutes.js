@@ -1,4 +1,3 @@
-// routes/admin.js
 const express = require('express');
 const router = express.Router();
 const { contractWithSigner } = require('../utils/contract');
@@ -22,11 +21,9 @@ router.post('/mint', async (req, res) => {
       return res.status(400).json({ error: 'Missing to or amount' });
     }
 
-    // 🔹 Convertir l'amount en fonction des décimales du token
-    const DECIMALS = 18; // change à 6 si ton contrat a 6 décimales
+    const DECIMALS = 18; 
     const parsedAmount = ethers.parseUnits(amount.toString(), DECIMALS);
 
-    // 🔹 Appel au smart contract
     const tx = await contractWithSigner.mintCredits(
       to,
       parsedAmount,

@@ -13,12 +13,14 @@ const creditsRouter = require('./routes/creditRoutes');
 const listingsRouter = require('./routes/listingRoutes');
 const transactionsRouter = require('./routes/transactionRoutes');
 const adminRouter = require('./routes/adminRoutes');
+const footprintRouter = require('./routes/footprintRoutes');
 
 app.use(express.json());
 app.use('/credits', creditsRouter);
 app.use('/listings', listingsRouter);
 app.use('/transactions', transactionsRouter);
 app.use('/admin', adminRouter);
+app.use("/footprint", footprintRouter);
 
 app.use((err, req, res, next) => {
   console.error("❌ Server error:", err);

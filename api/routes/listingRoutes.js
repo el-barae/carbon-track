@@ -1,4 +1,3 @@
-// routes/listings.js
 const express = require('express');
 const router = express.Router();
 const { contract } = require('../utils/contract');
@@ -18,7 +17,6 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Missing amount or pricePerToken' });
     }
 
-    // Ici PAS de parseUnits, car déjà fait dans le front
     const tx = await contractWithSigner.createListing(amount, pricePerToken);
     const receipt = await tx.wait();
 
@@ -56,8 +54,7 @@ router.get('/', async (req, res) => {
     const nextId = Number(nextIdBn.toString());
     if (nextId === 0) return res.json([]);
 
-    // call getActiveListings in chunks because some providers may have limits
-    const chunkSize = 200; // adjust if needed
+    const chunkSize = 200; 
     const listings = [];
     for (let i = 0; i < nextId; i += chunkSize) {
       const start = i;
@@ -93,7 +90,6 @@ router.get('/:id', async (req, res) => {
   try {
     const id = Number(req.params.id);
     const listing = await contract.listings(id);
-    // listing is a tuple: (id, seller, amount, pricePerToken, active)
     res.json({
       id: Number(listing.id.toString()),
       seller: listing.seller,

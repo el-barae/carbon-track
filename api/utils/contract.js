@@ -5,7 +5,7 @@ require('dotenv').config({ path: '../.env' });
 const RPC = process.env.RPC_URL || 'http://127.0.0.1:7545'; 
 const PROVIDER = new ethers.JsonRpcProvider(RPC);
 
-const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS || '0x3bbD5034C9cCEA4647B0cc250809715447f0531c';
+const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS || '0xdD3346b7CcDAa5D608131d349349Dc318FD8DE36';
 
 const contract = new ethers.Contract(CONTRACT_ADDRESS, CO2KEN.abi, PROVIDER);
 
