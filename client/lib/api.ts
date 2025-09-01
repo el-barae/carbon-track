@@ -129,6 +129,32 @@ export async function fetchCredits(): Promise<CreditMintEvent[]> {
   return apiRequest<CreditMintEvent[]>("/credits")
 }
 
+// Retire Credits
+export async function retireCredits(amount: bigint, reason: string) {
+  if (!window.ethereum) throw new Error("Metamask not found");
+
+  // 1. Provider depuis Metamask
+  const provider = new ethers.BrowserProvider(window.ethereum, "any");
+  await provider.send("eth_requestAccounts", []);
+
+  // 2. Récupérer le signer
+  const signer = await provider.getSigner();
+
+  // 3. Créer une instance du contrat
+  const contract = new ethers.Contract(CONTRACT_ADDRESS, CO2KEN.abi, signer);
+
+  // 4. Appeler la fonction avec amount + reason
+  const tx = await contract.retireCredits(amount, reason);
+
+  // 5. Attendre la confirmation
+  const receipt = await tx.wait();
+
+  return {
+    txHash: receipt.hash,
+    blockNumber: receipt.blockNumber,
+  };
+}
+
 // ---- Listings API ----
 
 // GET /listings - Fetch all active listings

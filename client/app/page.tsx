@@ -1,8 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useAccount, useReadContract, useWriteContract } from "wagmi"
-import { useTokenBalance } from "../lib/useTokenBalance"
+import { useAccount, useWriteContract } from "wagmi"
+import { ethers } from "ethers"
 import { contractConfig } from "../lib/contract"
 import {
   fetchCredits,
@@ -12,6 +12,7 @@ import {
   createListing as apiCreateListing,
   buyListing as apiBuyListing,
   cancelListing as apiCancelListing,
+  retireCredits as apiRetireCredits,
   adminMintCredits,
   adminVerifyCredit,
   formatTokenAmount,
@@ -29,6 +30,7 @@ import MarketplaceSection from "./components/MarketplaceSection"
 import CreditsSection from "./components/CreditsSection"
 import TransactionsSection from "./components/TransactionsSection"
 import AdminSection from "./components/AdminSection"
+import CO2KEN from "../abi/CO2ken.json"
 
 const fmt = (n?: number | string | bigint, d = 6) => {
   return formatTokenAmount(n?.toString() || "0", d)
@@ -36,25 +38,12 @@ const fmt = (n?: number | string | bigint, d = 6) => {
 
 export default function Page() {
   const { address } = useAccount()
+  const { writeContract, isPending } = useWriteContract()
 
   // Smart Contract States
-    const { data: balance, isLoading: balanceLoading } = useReadContract({
-    ...contractConfig,
-    functionName: "balanceOf",
-    args: address ? [address] : undefined,
-  }) as { data?: bigint, isLoading: boolean }
-
-  const { data: decimals, isLoading: decimalsLoading } = useReadContract({
-    ...contractConfig,
-    functionName: "decimals",
-  }) as { data?: number, isLoading: boolean }
-
-  const { data: nextListingId } = useReadContract({
-    ...contractConfig,
-    functionName: "nextListingId",
-  }) as { data?: bigint }
-
-  const { writeContract, isPending } = useWriteContract()
+  const [balance, setBalance] = useState<bigint>()
+  const [decimals, setDecimals] = useState<number>(6)
+  const [nextListingId, setNextListingId] = useState<bigint>()
 
   const [credits, setCredits] = useState<Credit[]>([])
   const [listings, setListings] = useState<Listing[]>([])
@@ -64,9 +53,34 @@ export default function Page() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // 🔹 Fetch balance, decimals, nextListingId directly from contract
+  useEffect(() => {
+    const loadOnChainData = async () => {
+      try {
+        if (!window.ethereum || !address) return
+        const provider = new ethers.BrowserProvider(window.ethereum)
+
+        const contract = new ethers.Contract(contractConfig.address, CO2KEN.abi, provider)
+
+        const [rawBalance, rawDecimals, rawNextListingId] = await Promise.all([
+          contract.balanceOf(address),
+          contract.decimals(),
+          contract.nextListingId(),
+        ])
+
+        setBalance(rawBalance)
+        // setDecimals(Number(rawDecimals))
+        setNextListingId(rawNextListingId)
+      } catch (err) {
+        console.error("[v0] Failed to load contract data:", err)
+      }
+    }
+    loadOnChainData()
+  }, [address])
+
   const d = decimals ?? 6
 
-  // Load on-chain data from backend
+  // Load off-chain data from backend
   useEffect(() => {
     loadAllData()
   }, [])
@@ -131,6 +145,9 @@ export default function Page() {
     }
   }
 
+  // ----------------
+  // Actions
+  // ----------------
   const createListing = async (amount: string, price: string) => {
     if (!validateAmount(amount) || !validateAmount(price)) {
       console.error("[v0] Invalid amount or price provided")
@@ -147,17 +164,6 @@ export default function Page() {
 
       await apiCreateListing(listingData)
 
-      // Also create on-chain listing
-      const tokenAmount = BigInt(Math.floor(Number(amount) * 10 ** d))
-      const pricePerTokenWei = BigInt(Math.floor(Number(price) * 1e18))
-
-      await writeContract({
-        ...contractConfig,
-        functionName: "createListing",
-        args: [tokenAmount, pricePerTokenWei],
-      })
-
-      // Refresh data after transaction
       setTimeout(() => {
         console.log("[v0] Refreshing data after listing creation")
         loadAllData()
@@ -170,10 +176,8 @@ export default function Page() {
   const buyListing = async (listing: Listing) => {
     try {
       console.log("[v0] Buying listing:", listing.id)
-
       await apiBuyListing(listing)
 
-      // Refresh data after transaction
       setTimeout(() => {
         console.log("[v0] Refreshing data after listing purchase")
         loadAllData()
@@ -186,17 +190,8 @@ export default function Page() {
   const cancelListing = async (id: number) => {
     try {
       console.log("[v0] Cancelling listing:", id)
-
       await apiCancelListing(id)
 
-      // Also cancel on-chain listing
-      await writeContract({
-        ...contractConfig,
-        functionName: "cancelListing",
-        args: [BigInt(id)],
-      })
-
-      // Refresh data after transaction
       setTimeout(() => {
         console.log("[v0] Refreshing data after listing cancellation")
         loadAllData()
@@ -213,16 +208,10 @@ export default function Page() {
     }
 
     try {
-      console.log("[v0] Retiring credits:", { amount, reason })
-      const tokenAmount = BigInt(Math.floor(Number(amount) * 10 ** d))
+      const parsedAmount = ethers.parseUnits(amount, 18);
 
-      await writeContract({
-        ...contractConfig,
-        functionName: "retireCredits",
-        args: [tokenAmount, reason],
-      })
+      await apiRetireCredits(parsedAmount, reason);
 
-      // Refresh data after transaction
       setTimeout(() => {
         console.log("[v0] Refreshing data after credit retirement")
         loadAllData()
@@ -233,7 +222,6 @@ export default function Page() {
     }
   }
 
-  // Admin functions for minting and verification
   const mintCredits = async (to: string, amount: string, projectId: string) => {
     if (!validateAddress(to) || !validateAmount(amount)) {
       console.error("[v0] Invalid recipient or amount provided")
@@ -242,7 +230,6 @@ export default function Page() {
 
     try {
       console.log("[v0] Admin minting credits:", { to, amount, projectId })
-
       const result = await adminMintCredits({
         to,
         amount,
@@ -250,10 +237,8 @@ export default function Page() {
         certifier: "Admin",
         vintage: new Date().getFullYear().toString(),
       })
-
       console.log("[v0] Credits minted successfully:", result)
 
-      // Refresh data after minting
       setTimeout(() => {
         console.log("[v0] Refreshing data after credit minting")
         loadAllData()
@@ -266,12 +251,9 @@ export default function Page() {
   const verifyCredit = async (holder: string, verified: boolean, notes?: string) => {
     try {
       console.log("[v0] Admin verifying credit:", { holder, verified, notes })
-      const result = await adminVerifyCredit({
-        holder,
-        verified,
-      })
+      const result = await adminVerifyCredit({ holder, verified })
       console.log("[v0] Credit verification completed:", result)
-      // Refresh data after verification
+
       setTimeout(() => {
         console.log("[v0] Refreshing data after credit verification")
         loadAllData()
@@ -281,8 +263,11 @@ export default function Page() {
     }
   }
 
+  // ----------------
+  // UI Sections
+  // ----------------
   const [activeSection, setActiveSection] = useState("portfolio")
-  
+
   const handleSectionChange = (section: string) => {
     setActiveSection(section)
   }
@@ -346,7 +331,7 @@ export default function Page() {
       <main className="max-w-6xl mx-auto p-4 space-y-6">
         {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">{error}</div>}
 
-        <WalletSection address={address} balance={balance} decimals={d} fmt={fmt} />
+        <WalletSection address={address} balance={balance} decimals={decimals} fmt={fmt} />
 
         {renderActiveSection()}
       </main>

@@ -13,6 +13,7 @@ interface WalletSectionProps {
 
 export default function WalletSection({ address, balance, decimals, fmt }: WalletSectionProps) {
   const isLoading = balance === undefined || decimals === undefined
+  const decimalsToUse = decimals ?? 6
   const [copied, setCopied] = useState(false)
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
@@ -85,7 +86,7 @@ export default function WalletSection({ address, balance, decimals, fmt }: Walle
           <label className="block text-sm font-medium text-gray-600 mb-2">SCO2 Token Balance</label>
           <div className="p-3 bg-white border border-gray-200 rounded-lg">
             <div className="text-2xl font-bold text-green-700">
-                {isLoading ? "Loading..." : fmt(balance, decimals)}{" "}
+                {isLoading ? "Loading..." : fmt(balance, decimalsToUse)}{" "}
               <span className="text-sm font-medium text-gray-500">SCO2</span>
             </div>
             <div className="text-xs text-gray-500 mt-1">Carbon Credit Tokens</div>
