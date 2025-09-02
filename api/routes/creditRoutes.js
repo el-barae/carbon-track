@@ -1,14 +1,16 @@
 const express = require('express');
 const router = express.Router();
-const { contract, provider, address } = require('../utils/contract');
+const { contract, provider, address, block } = require('../utils/contract');
 
 // GET /credits
 // Returns CreditsMinted events (mint history)
 router.get('/', async (req, res) => {
   try {
     const filter = contract.filters.CreditsMinted();
-    const DEPLOY_BLOCK = await provider.getTransactionReceipt(address);
-    const events = await contract.queryFilter(filter, DEPLOY_BLOCK, 'latest');
+    // const DEPLOY_BLOCK = await provider.getTransactionReceipt(address);
+    // const events = await contract.queryFilter(filter, DEPLOY_BLOCK, 'latest');
+
+    const events = await contract.queryFilter(filter, parseInt(block), 'latest');
 
     const rows = events.map(e => ({
       to: e.args.to,

@@ -176,28 +176,45 @@ export async function createListing(data: CreateListingRequest): Promise<Listing
 }
 
 // Purchase a listing
+// Achat d'une annonce
 export async function buyListing(listing: Listing) {
+  if (!window.ethereum) throw new Error("Metamask not found")
 
-  if (!window.ethereum) throw new Error("Metamask not found");
-  const provider = new ethers.BrowserProvider(window.ethereum, "any"); 
-    await provider.send("eth_requestAccounts", []);
-    const signer = await provider.getSigner();
+  const provider = new ethers.BrowserProvider(window.ethereum, "any")
+  await provider.send("eth_requestAccounts", [])
+  const signer = await provider.getSigner()
 
-    const contract = new ethers.Contract(CONTRACT_ADDRESS, CO2KEN.abi, signer);
+  const contract = new ethers.Contract(CONTRACT_ADDRESS, CO2KEN.abi, signer)
 
-    const expectedTotal = BigInt(listing.amount) * BigInt(listing.pricePerToken);
+  // Ici on suppose que listing.pricePerToken est déjà en wei
+  const pricePerTokenWei = BigInt(listing.pricePerToken)
+  const expectedTotal = BigInt(listing.amount) * pricePerTokenWei
 
-    const tx = await contract.buyListing(listing.id, {
-    value: ethers.toBigInt(expectedTotal),
-  });
+  console.log("[buyListing] listingId:", listing.id)
+  console.log("[buyListing] amount:", listing.amount)
+  console.log("[buyListing] pricePerTokenWei:", pricePerTokenWei.toString())
+  console.log("[buyListing] expectedTotal (wei):", expectedTotal.toString())
 
-  const receipt = await tx.wait();
+  try {
+    await contract.buyListing.staticCall(listing.id, {
+      value: expectedTotal,
+    })
+  } catch (err) {
+    console.error("[buyListing] Simulation failed:", err)
+    throw new Error("Impossible d'acheter : " + (err as any).message)
+  }
+
+  const tx = await contract.buyListing(listing.id, {
+    value: expectedTotal,
+  })
+  const receipt = await tx.wait()
 
   return {
     txHash: receipt.hash,
     blockNumber: receipt.blockNumber,
-  };
+  }
 }
+
 
 
 // POST /listings/:id/cancel - Cancel a listing

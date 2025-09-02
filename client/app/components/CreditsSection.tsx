@@ -136,42 +136,6 @@ export default function CreditsSection({
             </div>
           </div>
 
-          {/* ⚡️ Carbon Footprint Calculator */}
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-          <h3 className="font-semibold text-blue-800 mb-3">Carbon Footprint Calculator</h3>
-          <div className="flex flex-col md:flex-row gap-3 mb-3">
-            <input
-              type="number"
-              placeholder="Energy consumed (kWh)"
-              className="flex-1 border border-blue-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              value={energy}
-              onChange={(e) => setEnergy(e.target.value)}
-            />
-            <input
-              type="number"
-              placeholder="Car travel (km)"
-              className="flex-1 border border-blue-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              value={carKm}
-              onChange={(e) => setCarKm(e.target.value)}
-            />
-            <input
-              type="number"
-              placeholder="Flight travel (km)"
-              className="flex-1 border border-blue-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              value={flightKm}
-              onChange={(e) => setFlightKm(e.target.value)}
-            />
-            <button
-              onClick={handleCalculateFootprint}
-              disabled={loadingFootprint || (!energy && !carKm && !flightKm)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-all duration-200 disabled:opacity-50"
-            >
-              {loadingFootprint ? "Calculating..." : "Calculate"}
-            </button>
-          </div>
-          {footprint && ( <div className="text-sm font-medium text-gray-700"> Estimated Footprint:{" "} <span className="text-lg font-bold text-blue-700">{footprint}</span> </div> )}
-          </div>
-
           {/* Retire Form */}
           {showRetireForm && (
             <div className="bg-red-50 border border-red-200 rounded-xl p-4">
@@ -219,6 +183,42 @@ export default function CreditsSection({
               </p>
             </div>
           )}
+
+          {/* ⚡️ Carbon Footprint Calculator */}
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+          <h3 className="font-semibold text-blue-800 mb-3">Carbon Footprint Calculator</h3>
+          <div className="flex flex-col md:flex-row gap-3 mb-3">
+            <input
+              type="number"
+              placeholder="Energy consumed (kWh)"
+              className="flex-1 border border-blue-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              value={energy}
+              onChange={(e) => setEnergy(e.target.value)}
+            />
+            <input
+              type="number"
+              placeholder="Car travel (km)"
+              className="flex-1 border border-blue-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              value={carKm}
+              onChange={(e) => setCarKm(e.target.value)}
+            />
+            <input
+              type="number"
+              placeholder="Flight travel (km)"
+              className="flex-1 border border-blue-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              value={flightKm}
+              onChange={(e) => setFlightKm(e.target.value)}
+            />
+            <button
+              onClick={handleCalculateFootprint}
+              disabled={loadingFootprint || (!energy && !carKm && !flightKm)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-all duration-200 disabled:opacity-50"
+            >
+              {loadingFootprint ? "Calculating..." : "Calculate"}
+            </button>
+          </div>
+          {footprint && ( <div className="text-sm font-medium text-gray-700"> Estimated Footprint:{" "} <span className="text-lg font-bold text-blue-700">{footprint}</span> </div> )}
+          </div>
 
           {/* Credits List */}
           <div className="space-y-3">
