@@ -95,7 +95,7 @@ class APIError extends Error {
 // Generic API request using fetch
 async function apiRequest<T>(endpoint: string, options: { method?: "GET" | "POST"; data?: any } = {}): Promise<T> {
   const url = `${API_BASE}${endpoint}`
-  console.log(`Making API request to: ${url}`) // Debug log
+  // console.log(`Making API request to: ${url}`) // Debug log
 
   try {
     const fetchOptions: RequestInit = {
@@ -116,7 +116,7 @@ async function apiRequest<T>(endpoint: string, options: { method?: "GET" | "POST
     }
 
     const data = await response.json()
-    console.log(`API response from ${endpoint}:`, data)
+    // console.log(`API response from ${endpoint}:`, data)
     return data
   } catch (error) {
     if (error instanceof APIError) {
@@ -189,11 +189,6 @@ export async function buyListing(listing: Listing) {
   // Ici on suppose que listing.pricePerToken est déjà en wei
   const pricePerTokenWei = BigInt(listing.pricePerToken)
   const expectedTotal = BigInt(listing.amount) * pricePerTokenWei
-
-  console.log("[buyListing] listingId:", listing.id)
-  console.log("[buyListing] amount:", listing.amount)
-  console.log("[buyListing] pricePerTokenWei:", pricePerTokenWei.toString())
-  console.log("[buyListing] expectedTotal (wei):", expectedTotal.toString())
 
   try {
     await contract.buyListing.staticCall(listing.id, {

@@ -8,10 +8,11 @@ interface WalletSectionProps {
   balance?: bigint
   decimals?: number  
   fmt: (n?: number | string | bigint, d?: number) => string
+  onDisconnect?: () => void
 }
 
 
-export default function WalletSection({ address, balance, decimals, fmt }: WalletSectionProps) {
+export default function WalletSection({ address, balance, decimals, fmt, onDisconnect }: WalletSectionProps) {
   const isLoading = balance === undefined || decimals === undefined
   const decimalsToUse = decimals ?? 6
   const [copied, setCopied] = useState(false)
@@ -53,7 +54,9 @@ export default function WalletSection({ address, balance, decimals, fmt }: Walle
           <Wallet className="w-5 h-5 text-green-600" />
           Wallet Connected
         </h2>
-        <div className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">Active</div>
+        <div className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+          Active
+        </div>
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
@@ -76,6 +79,14 @@ export default function WalletSection({ address, balance, decimals, fmt }: Walle
             >
               <ExternalLink className="w-3 h-3" />
             </button>
+                      {onDisconnect && (
+            <button
+              onClick={onDisconnect}
+              className="px-3 py-1 bg-red-100 text-red-700 rounded-lg text-sm hover:bg-red-200 transition"
+            >
+              Disconnect
+            </button>
+          )}
           </div>
 
           {copied && <p className="text-xs text-green-600 mt-1">Address copied to clipboard!</p>}

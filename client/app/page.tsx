@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useAccount, useWriteContract } from "wagmi"
+import { useAccount, useWriteContract, useConnect, useDisconnect } from "wagmi"
+import { injected } from "wagmi/connectors"
 import { ethers } from "ethers"
 import { contractConfig } from "../lib/contract"
 import {
@@ -39,6 +40,8 @@ const fmt = (n?: number | string | bigint, d = 6) => {
 export default function Page() {
   const { address } = useAccount()
   const { writeContract, isPending } = useWriteContract()
+  const { connect } = useConnect()
+  const { disconnect } = useDisconnect()
 
   // Smart Contract States
   const [balance, setBalance] = useState<bigint>()
@@ -326,12 +329,12 @@ export default function Page() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar address={address} activeSection={activeSection} onSectionChange={handleSectionChange} />
+      <Navbar address={address} activeSection={activeSection} onSectionChange={handleSectionChange}  onConnectWallet={() => connect({ connector: injected() })} />
 
       <main className="max-w-6xl mx-auto p-4 space-y-6">
         {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">{error}</div>}
 
-        <WalletSection address={address} balance={balance} decimals={decimals} fmt={fmt} />
+        <WalletSection address={address} balance={balance} decimals={decimals} fmt={fmt} onDisconnect={disconnect} />
 
         {renderActiveSection()}
       </main>
