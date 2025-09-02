@@ -1,5 +1,5 @@
 // lib/api.ts - Enhanced API service using fetch for comprehensive on-chain data backend
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4000"
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://d51d6f73-fa65-418f-8c51-c2850ffae966-00-18xr3ba3qaggd.worf.replit.dev"
 import { ethers } from "ethers";
 import CO2KEN from "../abi/CO2ken.json";
 import { CONTRACT_ADDRESS } from "./contract";
