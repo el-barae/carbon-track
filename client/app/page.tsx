@@ -161,8 +161,8 @@ export default function Page() {
       console.log("[v0] Creating listing:", { amount, price })
 
       const listingData = {
-        amount: (Number(amount) * 10 ** d).toString(),
-        pricePerToken: (Number(price) * 1e18).toString(),
+        amount: (Number(amount) * 10 ** d).toString(),          
+        pricePerToken: ethers.parseEther(price).toString(),    
       }
 
       await apiCreateListing(listingData)

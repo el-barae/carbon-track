@@ -192,15 +192,6 @@ export async function buyListing(listing: Listing) {
   // ✅ Utiliser BigInt directement, pas de division par 1e18
   const expectedTotal = lst.amount * lst.pricePerToken
 
-  console.log("[buyListing] amount:", lst.amount.toString())
-  console.log("[buyListing] price per token:", lst.pricePerToken.toString())
-  console.log("[buyListing] ExpectedTotal (wei):", expectedTotal.toString())
-  console.log("[buyListing] On-chain total (wei):", (lst.amount * lst.pricePerToken).toString())
-
-  // Vérifier balance
-  const balance = await contract.balanceOf(CONTRACT_ADDRESS)
-  console.log("[buyListing] Contract balance:", balance.toString())
-
   // ✅ Envoi correct en BigInt
   const tx = await contract.buyListing(listing.id, {
     value: expectedTotal,

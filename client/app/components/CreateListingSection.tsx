@@ -62,8 +62,8 @@ export default function CreateListingSection({ onCreateListing, isPending }: Cre
           <div className="relative">
             <input
               type="number"
-              step="0.000001"
-              placeholder="e.g. 0.002000"
+              step="0.00000001"
+              placeholder="e.g. 0.0000020"
               className="w-full border border-gray-300 rounded-lg p-3 pr-12 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               value={price}
               onChange={(e) => setPrice(e.target.value)}
