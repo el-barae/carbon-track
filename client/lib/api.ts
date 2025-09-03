@@ -183,22 +183,25 @@ export async function buyListing(listing: Listing) {
   const provider = new ethers.BrowserProvider(window.ethereum, "any")
   await provider.send("eth_requestAccounts", [])
   const signer = await provider.getSigner()
-
   const contract = new ethers.Contract(CONTRACT_ADDRESS, CO2KEN.abi, signer)
 
-  // Ici on suppose que listing.pricePerToken est déjà en wei
-  const pricePerTokenWei = BigInt(listing.pricePerToken)
-  const expectedTotal = BigInt(listing.amount) * pricePerTokenWei
+  // 🔹 Lire la struct on-chain
+  const lst = await contract.listings(listing.id)
+  if (!lst.active) throw new Error("Listing not active")
 
-  try {
-    await contract.buyListing.staticCall(listing.id, {
-      value: expectedTotal,
-    })
-  } catch (err) {
-    console.error("[buyListing] Simulation failed:", err)
-    throw new Error("Impossible d'acheter : " + (err as any).message)
-  }
+  // ✅ Utiliser BigInt directement, pas de division par 1e18
+  const expectedTotal = lst.amount * lst.pricePerToken
 
+  console.log("[buyListing] amount:", lst.amount.toString())
+  console.log("[buyListing] price per token:", lst.pricePerToken.toString())
+  console.log("[buyListing] ExpectedTotal (wei):", expectedTotal.toString())
+  console.log("[buyListing] On-chain total (wei):", (lst.amount * lst.pricePerToken).toString())
+
+  // Vérifier balance
+  const balance = await contract.balanceOf(CONTRACT_ADDRESS)
+  console.log("[buyListing] Contract balance:", balance.toString())
+
+  // ✅ Envoi correct en BigInt
   const tx = await contract.buyListing(listing.id, {
     value: expectedTotal,
   })
@@ -209,8 +212,6 @@ export async function buyListing(listing: Listing) {
     blockNumber: receipt.blockNumber,
   }
 }
-
-
 
 // POST /listings/:id/cancel - Cancel a listing
 export async function cancelListing(listingId: number): Promise<ListingTransactionResponse> {
