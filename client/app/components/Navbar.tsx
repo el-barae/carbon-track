@@ -23,9 +23,9 @@ export default function Navbar({
   const navItems = [
     { name: "Portfolio", icon: Wallet, section: "portfolio" },
     { name: "Marketplace", icon: TrendingUp, section: "marketplace" },
-    { name: "Create Listing", icon: Plus, section: "create-listing" },
+    // { name: "Create Listing", icon: Plus, section: "create-listing" },
     { name: "Transactions", icon: FileText, section: "transactions" },
-    { name: "Admin", icon: Settings, section: "admin" },
+    { name: "Administration", icon: Settings, section: "admin" },
   ]
 
   const handleNavClick = (section: string) => {

@@ -295,13 +295,15 @@ export default function Page() {
             address={address}
             onBuy={buyListing}
             onCancel={cancelListing}
+            onCreateListing={createListing}
             fmt={fmt}
             decimals={d}
             loading={loading}
+            isPending={isPending}
           />
         )
-      case "create-listing":
-        return <CreateListingSection onCreateListing={createListing} isPending={isPending} />
+      // case "create-listing":
+      //   return <CreateListingSection onCreateListing={createListing} isPending={isPending} />
       case "transactions":
         return <TransactionsSection transactions={userTransactions} />
       case "admin":
@@ -311,6 +313,7 @@ export default function Page() {
             onMintCredits={mintCredits}
             onVerifyCredit={verifyCredit}
             isPending={isPending}
+            userAddress={address}
           />
         )
       default:

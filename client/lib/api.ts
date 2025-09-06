@@ -131,6 +131,49 @@ async function apiRequest<T>(endpoint: string, options: { method?: "GET" | "POST
   }
 }
 
+async function apiRequestAdmin<T>(endpoint: string, options: { method?: "GET" | "POST"; data?: any } = {}): Promise<T> {
+  const url = `${API_BASE}${endpoint}`
+  const address = await getAddress();
+  console.log('address: ', address)
+
+  // console.log(`Making API request to: ${url}`) // Debug log
+
+  try {
+  const fetchOptions: RequestInit = {
+    method: options.method || "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${address}`, 
+    },
+  }
+
+    if (options.data) {
+      fetchOptions.body = JSON.stringify(options.data)
+    }
+
+    const response = await fetch(url, fetchOptions)
+
+    if (!response.ok) {
+      throw new APIError(response.status, `API request failed: ${response.statusText}`)
+    }
+
+    const data = await response.json()
+    // console.log(`API response from ${endpoint}:`, data)
+    return data
+  } catch (error) {
+    if (error instanceof APIError) {
+      throw error
+    }
+
+    if (error instanceof TypeError && error.message.includes("fetch")) {
+      throw new Error(`No response from API server at ${API_BASE}`)
+    }
+
+    throw new Error(`Request error: ${error instanceof Error ? error.message : "Unknown error"}`)
+  }
+
+}
+
 // ---- Credits API ----
 
 // GET /credits - Fetch all credit mint events
@@ -208,7 +251,7 @@ export async function buyListing(listing: Listing) {
 export async function cancelListing(listingId: number): Promise<ListingTransactionResponse> {
   return apiRequest<ListingTransactionResponse>(`/listings/${listingId}/cancel`, {
     method: "POST",
-    data: {}, // Empty body as required by backend
+    data: {},
   })
 }
 
@@ -228,7 +271,7 @@ export async function fetchTransactionsByAddress(address: string): Promise<Trans
 
 // POST /admin/mint - Admin mint new credits
 export async function adminMintCredits(data: AdminMintRequest): Promise<AdminMintResponse> {
-  return apiRequest<AdminMintResponse>("/admin/mint", {
+  return apiRequestAdmin<AdminMintResponse>("/admin/mint", {
     method: "POST",
     data,
   })
@@ -236,7 +279,7 @@ export async function adminMintCredits(data: AdminMintRequest): Promise<AdminMin
 
 // POST /admin/verify - Admin verify credit holder
 export async function adminVerifyCredit(data: AdminVerifyRequest): Promise<AdminVerifyResponse> {
-  return apiRequest<AdminVerifyResponse>("/admin/verify", {
+  return apiRequestAdmin<AdminVerifyResponse>("/admin/verify", {
     method: "POST",
     data,
   })
@@ -457,6 +500,12 @@ export function validateAddress(address: string): boolean {
 
 export function validateAmount(amount: string): boolean {
   return isValidAmount(amount)
+}
+
+async function getAddress() {
+  const provider = new ethers.BrowserProvider(window.ethereum)
+  const signer = await provider.getSigner()
+  return signer.address
 }
 
 export type Credit = CreditMintEvent

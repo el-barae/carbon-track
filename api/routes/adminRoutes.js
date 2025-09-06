@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { contractWithSigner } = require('../utils/contract');
 const { ethers } = require('ethers');
+const checkAdmin = require("../middleware/checkAdmin")
 
 
 if (!contractWithSigner) {
@@ -10,7 +11,7 @@ if (!contractWithSigner) {
 
 // POST /admin/mint
 // body: { to, amount, projectId, vintage, certifier }
-router.post('/mint', async (req, res) => {
+router.post('/mint', checkAdmin, async (req, res) => {
   try {
     if (!contractWithSigner) {
       return res.status(500).json({ error: 'Admin signer not configured' });
@@ -48,7 +49,7 @@ router.post('/mint', async (req, res) => {
 
 // POST /admin/verify
 // body: { holder, verified }
-router.post('/verify', async (req, res) => {
+router.post('/verify', checkAdmin, async (req, res) => {
   try {
     if (!contractWithSigner) return res.status(500).json({ error: 'Admin signer not configured' });
 

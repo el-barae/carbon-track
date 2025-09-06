@@ -2,8 +2,6 @@ const express = require('express');
 const router = express.Router();
 const { contract } = require('../utils/contract');
 const { contractWithSigner } = require("../utils/contract")
-const { ethers } = require('ethers');
-
 
 // POST /listings - Create new listing
 router.post('/', async (req, res) => {
