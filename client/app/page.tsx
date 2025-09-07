@@ -160,12 +160,10 @@ export default function Page() {
     try {
       console.log("[v0] Creating listing:", { amount, price })
 
-      const listingData = {
-        amount: (Number(amount) * 10 ** d).toString(),          
-        pricePerToken: ethers.parseEther(price).toString(),    
-      }
+      const amountBigInt = BigInt(Math.floor(Number(amount) * 10 ** d)) // d = décimales de ton token
+      const priceBigInt = ethers.parseEther(price)
 
-      await apiCreateListing(listingData)
+      await apiCreateListing(amountBigInt, priceBigInt)
 
       setTimeout(() => {
         console.log("[v0] Refreshing data after listing creation")

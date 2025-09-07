@@ -174,6 +174,16 @@ async function apiRequestAdmin<T>(endpoint: string, options: { method?: "GET" | 
 
 }
 
+async function getContract() {
+  if (!window.ethereum) throw new Error("Metamask not found")
+
+  const provider = new ethers.BrowserProvider(window.ethereum, "any")
+  await provider.send("eth_requestAccounts", [])
+  const signer = await provider.getSigner()
+
+  return new ethers.Contract(CONTRACT_ADDRESS, CO2KEN.abi, signer)
+}
+
 // ---- Credits API ----
 
 // GET /credits - Fetch all credit mint events
@@ -211,31 +221,28 @@ export async function fetchListingById(id: number): Promise<ActiveListing> {
 }
 
 // POST /listings - Create new listing
-export async function createListing(data: CreateListingRequest): Promise<ListingTransactionResponse> {
-  return apiRequest<ListingTransactionResponse>("/listings", {
-    method: "POST",
-    data,
-  })
+export async function createListing(amount: bigint, pricePerToken: bigint) {
+  const contract = await getContract()
+
+  const tx = await contract.createListing(amount, pricePerToken)
+  const receipt = await tx.wait()
+
+  return {
+    txHash: receipt.hash,
+    blockNumber: receipt.blockNumber,
+  }
 }
 
 // Purchase a listing
 // Achat d'une annonce
 export async function buyListing(listing: Listing) {
-  if (!window.ethereum) throw new Error("Metamask not found")
+  const contract = await getContract()
 
-  const provider = new ethers.BrowserProvider(window.ethereum, "any")
-  await provider.send("eth_requestAccounts", [])
-  const signer = await provider.getSigner()
-  const contract = new ethers.Contract(CONTRACT_ADDRESS, CO2KEN.abi, signer)
-
-  // 🔹 Lire la struct on-chain
   const lst = await contract.listings(listing.id)
   if (!lst.active) throw new Error("Listing not active")
 
-  // ✅ Utiliser BigInt directement, pas de division par 1e18
   const expectedTotal = lst.amount * lst.pricePerToken
 
-  // ✅ Envoi correct en BigInt
   const tx = await contract.buyListing(listing.id, {
     value: expectedTotal,
   })
@@ -248,11 +255,16 @@ export async function buyListing(listing: Listing) {
 }
 
 // POST /listings/:id/cancel - Cancel a listing
-export async function cancelListing(listingId: number): Promise<ListingTransactionResponse> {
-  return apiRequest<ListingTransactionResponse>(`/listings/${listingId}/cancel`, {
-    method: "POST",
-    data: {},
-  })
+export async function cancelListing(listingId: number) {
+  const contract = await getContract()
+
+  const tx = await contract.cancelListing(listingId)
+  const receipt = await tx.wait()
+
+  return {
+    txHash: receipt.hash,
+    blockNumber: receipt.blockNumber,
+  }
 }
 
 // ---- Transactions API ----
