@@ -100,18 +100,18 @@ export default function AdminSection({
           <div className="text-center">
             <Lock className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-700 mb-2">
-              Accès Administrateur Requis
+              Administrator Access Required
             </h3>
             <p className="text-gray-500 mb-4">
-              Vous devez être connecté en tant qu'administrateur pour accéder à cette section.
+              You must be logged in as an administrator to access this section.
             </p>
             {userAddress ? (
               <div className="text-sm text-gray-400">
-                Adresse actuelle: {userAddress.slice(0, 6)}...{userAddress.slice(-4)}
+                Current address: {userAddress.slice(0, 6)}...{userAddress.slice(-4)}
               </div>
             ) : (
               <div className="text-sm text-gray-400">
-                Veuillez connecter votre wallet
+                Please connect your wallet
               </div>
             )}
           </div>
