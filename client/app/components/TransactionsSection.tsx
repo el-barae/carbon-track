@@ -69,9 +69,9 @@ export default function TransactionsSection({ transactions }: TransactionsSectio
 
           <div className="space-y-3">
             <h3 className="font-semibold text-gray-800">Recent Transactions</h3>
-            {clientTransactions.map((tx: any, index) => {
+            {clientTransactions.slice().reverse().map((tx: any, index) => {
               const uniqueKey = tx.id || `${tx.creditId}-${tx.createdAt}-${index}`;
-              const createdAt = new Date(tx.createdAt);
+              // const createdAt = new Date(tx.createdAt);
 
               return (
                 <div key={uniqueKey} className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
@@ -81,25 +81,25 @@ export default function TransactionsSection({ transactions }: TransactionsSectio
                         <div className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-bold">
                           Credit #{tx.creditId}
                         </div>
-                        <div className="text-sm font-medium text-gray-800">{tx.amount} tCO₂</div>
-                        <div className="text-xs text-gray-500">{createdAt.toLocaleDateString()}</div>
+                        <div className="text-sm font-medium text-gray-800">{tx.value} tCO₂</div>
+                        {/* <div className="text-xs text-gray-500">{createdAt.toLocaleDateString()}</div> */}
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                         <div>
                           <div className="text-gray-500 font-medium">From (Seller)</div>
-                          <div className="font-mono text-xs text-gray-700 break-all">{tx.seller}</div>
+                          <div className="font-mono text-xs text-gray-700 break-all">{tx.from}</div>
                         </div>
                         <div>
                           <div className="text-gray-500 font-medium">To (Buyer)</div>
-                          <div className="font-mono text-xs text-gray-700 break-all">{tx.buyer}</div>
+                          <div className="font-mono text-xs text-gray-700 break-all">{tx.to}</div>
                         </div>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-2">
                       <div className="text-right">
-                        <div className="text-sm font-medium text-gray-600">{createdAt.toLocaleTimeString()}</div>
+                        {/* <div className="text-sm font-medium text-gray-600">{createdAt.toLocaleTimeString()}</div> */}
                         <div className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
                           Completed
                         </div>
