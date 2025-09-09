@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState} from "react"
 import { Input } from "./ui/input"
 import { RefreshCw, Shield, Database, UserPlus, CheckCircle, XCircle, Coins, Lock } from "lucide-react"
 

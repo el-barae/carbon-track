@@ -1,7 +1,7 @@
 "use client"
 import WalletConnection from "./ui/WalletConnection"
 import { useState } from "react"
-import { Menu, X, Leaf, Wallet, TrendingUp, FileText, Settings, Plus } from "lucide-react"
+import { Menu, X, Leaf, Wallet, TrendingUp, FileText, Settings} from "lucide-react"
 
 interface NavbarProps {
   address?: string

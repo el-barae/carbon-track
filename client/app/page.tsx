@@ -26,7 +26,6 @@ import {
 } from "../lib/api"
 import Navbar from "./components/Navbar"
 import WalletSection from "./components/WalletSection"
-import CreateListingSection from "./components/CreateListingSection"
 import MarketplaceSection from "./components/MarketplaceSection"
 import CreditsSection from "./components/CreditsSection"
 import TransactionsSection from "./components/TransactionsSection"
@@ -39,18 +38,15 @@ const fmt = (n?: number | string | bigint, d = 6) => {
 
 export default function Page() {
   const { address } = useAccount()
-  const { writeContract, isPending } = useWriteContract()
+  const { isPending } = useWriteContract()
   const { connect } = useConnect()
   const { disconnect } = useDisconnect()
 
   // Smart Contract States
   const [balance, setBalance] = useState<bigint>()
-  const [decimals, setDecimals] = useState<number>(6)
-  const [nextListingId, setNextListingId] = useState<bigint>()
-
+  const [decimals] = useState<number>(6)
   const [credits, setCredits] = useState<Credit[]>([])
   const [listings, setListings] = useState<Listing[]>([])
-  const [transactions, setTransactions] = useState<Transaction[]>([])
   const [userCredits, setUserCredits] = useState<Credit[]>([])
   const [userTransactions, setUserTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(false)
@@ -73,7 +69,6 @@ export default function Page() {
 
         setBalance(rawBalance)
         // setDecimals(Number(rawDecimals))
-        setNextListingId(rawNextListingId)
       } catch (err) {
         console.error("[v0] Failed to load contract data:", err)
       }
@@ -113,7 +108,7 @@ export default function Page() {
 
       setCredits(creditsData)
       setListings(listingsData)
-      setTransactions(transactionsData)
+      // setTransactions(transactionsData)
     } catch (error) {
       console.error("[v0] Failed to load data:", error)
       setError("Failed to load blockchain data. Please try again.")
