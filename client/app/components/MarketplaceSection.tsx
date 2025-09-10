@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { ShoppingCart, X, TrendingUp, Plus } from "lucide-react"
+import { ShoppingCart, X, TrendingUp, Plus, User, Store } from "lucide-react"
 
 interface MarketplaceSectionProps {
   listings: any[]
@@ -36,6 +36,9 @@ export default function MarketplaceSection({
   const [price, setPrice] = useState("")
   const [calculatedValue, setCalculatedValue] = useState<string | null>(null)
   const [showCreateForm, setShowCreateForm] = useState(false)
+  
+  // View mode state
+  const [viewMode, setViewMode] = useState<'all' | 'own'>('all')
 
   const formatPrice = (pricePerToken: string, amount: string) => {
     const priceEth = Number(pricePerToken) / 1e18
@@ -50,6 +53,13 @@ export default function MarketplaceSection({
   const formatAddress = (addr: string) => {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`
   }
+
+  // Filter listings based on view mode
+  const filteredListings = viewMode === 'own' 
+    ? listings.filter(listing => address && listing.seller.toLowerCase() === address.toLowerCase())
+    : listings.filter(listing => !address || listing.seller.toLowerCase() !== address.toLowerCase())
+
+  const ownListings = listings.filter(listing => address && listing.seller.toLowerCase() === address.toLowerCase())
 
   // Calculate total volume and average price on the client side after mount
   useEffect(() => {
@@ -119,8 +129,36 @@ export default function MarketplaceSection({
         </div>
       </div>
 
-      <div className="text-xs text-gray-500 mb-4 font-mono bg-gray-50 px-3 py-2 rounded">
-        GET /listings (active marketplace listings)
+      {/* View Mode Toggle */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center bg-gray-100 rounded-lg p-1">
+          <button
+            onClick={() => setViewMode('all')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+              viewMode === 'all'
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-gray-600 hover:text-gray-800'
+            }`}
+          >
+            <Store className="w-4 h-4" />
+            All listings ({listings.filter(l => !address || l.seller.toLowerCase() !== address.toLowerCase()).length})
+          </button>
+          <button
+            onClick={() => setViewMode('own')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+              viewMode === 'own'
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-gray-600 hover:text-gray-800'
+            }`}
+          >
+            <User className="w-4 h-4" />
+            My listings ({ownListings.length})
+          </button>
+        </div>
+
+        <div className="text-xs text-gray-500 font-mono bg-gray-50 px-3 py-2 rounded">
+          GET /listings ({viewMode === 'all' ? 'marketplace' : 'user'} view)
+        </div>
       </div>
 
       {/* Admin Create Listing Form */}
@@ -211,12 +249,19 @@ export default function MarketplaceSection({
           <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <div className="text-gray-500 font-medium">Loading marketplace...</div>
         </div>
-      ) : !listings.length ? (
+      ) : !filteredListings.length ? (
         <div className="text-center py-12">
-          <div className="text-6xl mb-4">🏪</div>
-          <div className="text-gray-500 font-medium mb-2">No active listings</div>
+          <div className="text-6xl mb-4">
+            {viewMode === 'own' ? '📋' : '🏪'}
+          </div>
+          <div className="text-gray-500 font-medium mb-2">
+            {viewMode === 'own' ? 'No listings found' : 'No listings available'}
+          </div>
           <div className="text-sm text-gray-400">
-              {"Use the Create Listing button above to add the first listing to the marketplace or check back later for new carbon credit listings"}
+            {viewMode === 'own' 
+              ? "Utilisez le bouton 'Create Listing' ci-dessus pour créer votre premier listing"
+              : "Vérifiez plus tard pour de nouveaux listings de crédits carbone ou créez le premier listing"
+            }
           </div>
         </div>
       ) : (
@@ -224,26 +269,31 @@ export default function MarketplaceSection({
           {/* Marketplace Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-              <div className="text-blue-600 font-medium text-sm">Active Listings</div>
-              <div className="text-xl font-bold text-blue-800">{listings.length}</div>
+              <div className="text-blue-600 font-medium text-sm">
+                {viewMode === 'own' ? 'My Listings' : 'Active Listings'}
+              </div>
+              <div className="text-xl font-bold text-blue-800">{filteredListings.length}</div>
             </div>
             <div className="bg-green-50 border border-green-200 rounded-lg p-3">
               <div className="text-green-600 font-medium text-sm">Total Volume</div>
               <div className="text-xl font-bold text-green-800">
-                {marketplaceData.totalVolume.toFixed(2)} SCO2
+                {filteredListings.reduce((sum, listing) => sum + Number(listing.amount) / 10 ** decimals, 0).toFixed(2)} SCO2
               </div>
             </div>
             <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
-              <div className="text-purple-600 font-medium text-sm">Avg Price</div>
+              <div className="text-purple-600 font-medium text-sm">Average Price</div>
               <div className="text-xl font-bold text-purple-800">
-                {marketplaceData.avgPrice.toFixed(6)} ETH
+                {filteredListings.length > 0 
+                  ? (filteredListings.reduce((sum, listing) => sum + Number(listing.pricePerToken) / 1e18, 0) / filteredListings.length).toFixed(6)
+                  : '0.000000'
+                } ETH
               </div>
             </div>
           </div>
 
           {/* Listings Grid */}
           <div className="space-y-3">
-            {listings.map((listing: any) => {
+            {filteredListings.map((listing: any) => {
               const { pricePerToken, totalPrice } = formatPrice(listing.pricePerToken, listing.amount)
               const isOwnListing = address && listing.seller.toLowerCase() === address.toLowerCase()
 
@@ -270,7 +320,9 @@ export default function MarketplaceSection({
 
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                         <div>
-                          <div className="text-gray-500 font-medium">Seller</div>
+                          <div className="text-gray-500 font-medium">
+                            {viewMode === 'own' ? 'Your Address' : 'Seller'}
+                          </div>
                           <div className="font-mono text-xs text-gray-700">{formatAddress(listing.seller)}</div>
                         </div>
                         <div>
